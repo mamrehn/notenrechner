@@ -28,33 +28,26 @@ $(function() {
             const maxPoints = parseFloat(params.get('max')) || 100;
             const smaxPoints = parseFloat(params.get('smax')) || maxPoints;
 
-            const extraPoints = Math.max(smaxPoints - maxPoints, 0);
+            const extraPoints = smaxPoints - maxPoints;
+            const calcMaxPoints = maxPoints + extraPoints;
 			
-			const gradeLabels = [
-				"Sehr gut",    // 1
-				"Gut",         // 2
-				"Befriedigend",// 3
-				"Ausreichend", // 4
-				"Mangelhaft",  // 5
-				"Ungenügend"   // 6
-			]
+            const gradeLabels = [
+		"Sehr gut",    // 1
+		"Gut",         // 2
+		"Befriedigend",// 3
+		"Ausreichend", // 4
+		"Mangelhaft",  // 5
+		"Ungenügend"   // 6
+            ]
 
             this.collection = new Grades([
-                { grade: gradeLabels[0], minPoints: Math.round(92 / 100 * maxPoints), maxPoints: maxPoints + extraPoints },
-                { grade: gradeLabels[1], minPoints: Math.round(81 / 100 * maxPoints), maxPoints: Math.round(92 / 100 * maxPoints) - 0.1 },
-                { grade: gradeLabels[2], minPoints: Math.round(67 / 100 * maxPoints), maxPoints: Math.round(81 / 100 * maxPoints) - 0.1 },
-                { grade: gradeLabels[3], minPoints: Math.round(50 / 100 * maxPoints), maxPoints: Math.round(67 / 100 * maxPoints) - 0.1 },
-                { grade: gradeLabels[4], minPoints: Math.round(30 / 100 * maxPoints), maxPoints: Math.round(50 / 100 * maxPoints) - 0.1 },
-                { grade: gradeLabels[5], minPoints: 0, maxPoints: Math.round(30 / 100 * maxPoints) - 0.1 }
+                { grade: gradeLabels[0], minPoints: Math.round(92 / 100 * calcMaxPoints), maxPoints: maxPoints },
+                { grade: gradeLabels[1], minPoints: Math.round(81 / 100 * calcMaxPoints), maxPoints: Math.round(92 / 100 * calcMaxPoints) - 0.1 },
+                { grade: gradeLabels[2], minPoints: Math.round(67 / 100 * calcMaxPoints), maxPoints: Math.round(81 / 100 * calcMaxPoints) - 0.1 },
+                { grade: gradeLabels[3], minPoints: Math.round(50 / 100 * calcMaxPoints), maxPoints: Math.round(67 / 100 * calcMaxPoints) - 0.1 },
+                { grade: gradeLabels[4], minPoints: Math.round(30 / 100 * calcMaxPoints), maxPoints: Math.round(50 / 100 * calcMaxPoints) - 0.1 },
+                { grade: gradeLabels[5], minPoints: 0, maxPoints: Math.round(30 / 100 * calcMaxPoints) - 0.1 }
             ]);
-
-            if (extraPoints > 0) {
-                this.collection.each(function(grade) {
-                    if (grade.get('grade') === 'sehr gut') {
-                        grade.set('maxPoints', grade.get('maxPoints') + extraPoints);
-                    }
-                });
-            }
 
             this.render();
         },
@@ -70,14 +63,14 @@ $(function() {
             const params = new URLSearchParams(window.location.hash.substr(1));
             const points = parseFloat(params.get('p'));
             
-			const gradeLabels = [
-				"Sehr gut",    // 1
-				"Gut",         // 2
-				"Befriedigend",// 3
-				"Ausreichend", // 4
-				"Mangelhaft",  // 5
-				"Ungenügend"   // 6
-			];
+            const gradeLabels = [
+		"Sehr gut",    // 1
+		"Gut",         // 2
+		"Befriedigend",// 3
+		"Ausreichend", // 4
+		"Mangelhaft",  // 5
+		"Ungenügend"   // 6
+            ];
 			
             if (isNaN(points)) {
                 return;
