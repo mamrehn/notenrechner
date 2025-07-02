@@ -1,26 +1,39 @@
 // app.js
 $(function() {
+    // Get the base URL for examples
+    const baseUrl = window.location.href.split('#')[0];
+
+    // Update example links with the actual base URL
+    $('#example-1').attr('href', baseUrl + '#max=13&p=11').text(baseUrl + '#max=13&p=11');
+    $('#example-2').attr('href', baseUrl + '#max=100&p=85').text(baseUrl + '#max=100&p=85');
+
+    // Backbone Model for a single grade entry
     const Grade = Backbone.Model.extend({
-        defaults: {
-            grade: '',
-            minPoints: 0,
-            maxPoints: 100,
-        }
+	defaults: {
+	    grade: '',      // e.g., "Sehr gut"
+	    minPoints: 0,   // Minimum points for this grade
+	    maxPoints: 100, // Maximum points for this grade
+	}
     });
 
+    // Backbone Collection for all grades
     const Grades = Backbone.Collection.extend({
-        model: Grade
+	model: Grade
     });
 
+    // Backbone View for a single grade row in the table
     const GradeView = Backbone.View.extend({
-        tagName: 'tr',
-        template: _.template('<td><%= minPoints %> - <%= maxPoints %></td><td><%= grade %></td>'),
-        render: function() {
-            this.$el.html(this.template(this.model.toJSON()));
-            return this;
-        }
+	tagName: 'tr', // Each grade will be rendered as a table row
+	// Template to display min/max points and the grade
+	template: _.template('<td><%= minPoints.toFixed(2) %> - <%= maxPoints.toFixed(2) %></td><td><%= grade %></td>'),
+	render: function() {
+	    // Render the model data into the template and set it as the element's HTML
+	    this.$el.html(this.template(this.model.toJSON()));
+	    return this;
+	}
     });
 
+    // Backbone View for the entire grading scale table
     const GradesView = Backbone.View.extend({
         el: '#grading-scale',
         initialize: function() {
@@ -50,44 +63,64 @@ $(function() {
             ]);
 
             this.render();
-        },
-        render: function() {
-            const self = this;
-            this.collection.each(function(grade) {
-                const gradeView = new GradeView({ model: grade });
-                self.$el.append(gradeView.render().el);
-            });
             this.highlightRow();
-        },
-        highlightRow: function() {
-            const params = new URLSearchParams(window.location.hash.substr(1));
-            const points = parseFloat(params.get('p'));
-            
-            const gradeLabels = [
-		"Sehr gut",    // 1
-		"Gut",         // 2
-		"Befriedigend",// 3
-		"Ausreichend", // 4
-		"Mangelhaft",  // 5
-		"Ungenügend"   // 6
-            ];
-			
-            if (isNaN(points)) {
-                return;
-            }
+	    this.checkAndShowUsage(); // Check if usage box should be shown
+	},
+	render: function() {
+	    // Clear existing table rows
+	    this.$el.empty();
+	    const self = this;
+	    // Iterate over each grade model in the collection and render its view
+	    this.collection.each(function(grade) {
+		const gradeView = new GradeView({ model: grade });
+		self.$el.append(gradeView.render().el); // Append the rendered row to the table body
+	    });
+	},
+	highlightRow: function() {
+	    const params = new URLSearchParams(window.location.hash.substr(1));
+	    const points = parseFloat(params.get('p')); // Get the achieved points from URL
 
-            const grade = this.collection.find(function(model) {
-                return points >= model.get('minPoints') && points <= model.get('maxPoints');
-            });
+	    // If no points are provided or it's not a number, do nothing
+	    if (isNaN(points)) {
+		return;
+	    }
 
-            if (grade) {
-                const gradeElement = this.$el.find('tr').eq(this.collection.indexOf(grade));
-                gradeElement.addClass('table-info');
-                $('#result').html(`Erreichte Note: ${gradeLabels.indexOf(grade.get('grade')) + 1} (${grade.get('grade').toLowerCase()}) mit ${points} Punkten`
-				).addClass('alert-info').show();
-            }
-        }
+	    // Find the grade model that corresponds to the achieved points
+	    const grade = this.collection.find(function(model) {
+		// Check if points fall within the grade's range
+		return points >= model.get('minPoints') && points <= model.get('maxPoints');
+	    });
+
+	    // If a matching grade is found, highlight its row and display the result
+	    if (grade) {
+		// Find the corresponding table row element
+		const gradeElement = this.$el.find('tr').eq(this.collection.indexOf(grade));
+		// Add Bootstrap class for highlighting
+		gradeElement.addClass('table-info');
+
+		// Determine the numerical grade (1-6)
+		const gradeLabels = [
+		    "Sehr gut", "Gut", "Befriedigend",
+		    "Ausreichend", "Mangelhaft", "Ungenügend"
+		];
+		const numericalGrade = gradeLabels.indexOf(grade.get('grade')) + 1;
+
+		// Display the result in the dedicated div
+		$('#result').html(
+		    `Erreichte Note: ${numericalGrade} (${grade.get('grade').toLowerCase()}) mit ${points.toFixed(2)} Punkten.`
+		).addClass('alert-info').show(); // Show the result box with Bootstrap alert styling
+	    }
+	},
+	// New function to check and show usage box
+	checkAndShowUsage: function() {
+	    const params = new URLSearchParams(window.location.hash.substr(1));
+	    // If no 'max' or 'p' parameters are present, show the usage box
+	    if (!params.has('max') && !params.has('p')) {
+		$('#usage-box').show(); // Show the usage box
+	    }
+	}
     });
 
+    // Initialize the main view, which sets up the application
     new GradesView();
 });
