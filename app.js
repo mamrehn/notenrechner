@@ -41,12 +41,12 @@ $(function() {
             ]
 
             this.collection = new Grades([
-                { grade: gradeLabels[0], minPoints: Math.round(92 / 100 * calcMaxPoints), maxPoints: maxPoints },
-                { grade: gradeLabels[1], minPoints: Math.round(81 / 100 * calcMaxPoints), maxPoints: Math.round(92 / 100 * calcMaxPoints) - 0.1 },
-                { grade: gradeLabels[2], minPoints: Math.round(67 / 100 * calcMaxPoints), maxPoints: Math.round(81 / 100 * calcMaxPoints) - 0.1 },
-                { grade: gradeLabels[3], minPoints: Math.round(50 / 100 * calcMaxPoints), maxPoints: Math.round(67 / 100 * calcMaxPoints) - 0.1 },
-                { grade: gradeLabels[4], minPoints: Math.round(30 / 100 * calcMaxPoints), maxPoints: Math.round(50 / 100 * calcMaxPoints) - 0.1 },
-                { grade: gradeLabels[5], minPoints: 0, maxPoints: Math.round(30 / 100 * calcMaxPoints) - 0.1 }
+                { grade: gradeLabels[0], minPoints: Math.round(2 * 92 / 100 * calcMaxPoints) / 2 - 0.25, maxPoints: maxPoints },
+                { grade: gradeLabels[1], minPoints: Math.round(2 * 81 / 100 * calcMaxPoints) / 2 - 0.25, maxPoints: Math.round(2 * 92 / 100 * calcMaxPoints) / 2 - 0.26 },
+                { grade: gradeLabels[2], minPoints: Math.round(2 * 67 / 100 * calcMaxPoints) / 2 - 0.25, maxPoints: Math.round(2 * 81 / 100 * calcMaxPoints) / 2 - 0.26 },
+                { grade: gradeLabels[3], minPoints: Math.round(2 * 50 / 100 * calcMaxPoints) / 2 - 0.25, maxPoints: Math.round(2 * 67 / 100 * calcMaxPoints) / 2 - 0.26 },
+                { grade: gradeLabels[4], minPoints: Math.round(2 * 30 / 100 * calcMaxPoints) / 2 - 0.25, maxPoints: Math.round(2 * 50 / 100 * calcMaxPoints) / 2 - 0.26 },
+                { grade: gradeLabels[5], minPoints: 0, maxPoints: Math.round(2 * 30 / 100 * calcMaxPoints) / 2 - 0.26 }
             ]);
 
             this.render();
