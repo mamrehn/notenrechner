@@ -122,5 +122,11 @@ $(function() {
     });
 
     // Initialize the main view, which sets up the application
-    new GradesView();
+    let gradesViewInstance = new GradesView();
+
+    // Add event listener for hash changes
+    window.addEventListener("hashchange", function () {
+	// Re-initialize the GradesView to re-compute and re-render based on the new hash
+	gradesViewInstance = new GradesView();
+    });
 });
