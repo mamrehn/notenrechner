@@ -464,15 +464,13 @@
     $('print-facts').innerHTML = facts.map(([k, v]) => '<dt>' + escapeHtml(k) + '</dt><dd>' + escapeHtml(v) + '</dd>').join('');
   }
 
-  /* Notenspiegel with tilted tops. Height = number of people; the top
-     tilts by where they sit inside the grade's percent range: left side
-     higher = closer to the better grade, right side higher = closer to
-     the worse grade, level = centred. The tilt is a share of the bar's own
-     height: the low corner drops by |lean| × height, the high corner rises
-     by the same, so the area stays the count; with every result on the
-     bound (lean ±1) the low corner touches the baseline. A dotted outline
-     shows the regular flat bar: its top, and its edge where the tilted top
-     falls below it. */
+  /* Notenspiegel with tilted tops. Height = number of people (the dotted
+     flat bar). The top tilts around its middle by where they sit inside
+     the grade's percent range: left side higher = closer to the better
+     grade, right side higher = closer to the worse grade, level = centred.
+     The angle is lean × 45°: ±45° when all results sit on the bound. A
+     short bar whose tilted top would pass the baseline is cut there, so
+     the angle stays true. */
   function leanText(b) {
     if (!b.count) return '–';
     const strength = Math.abs(b.lean);
@@ -489,30 +487,37 @@
     const room = 170;                // baseline to the highest corner, leaving space for the counts
     const slot = width / 6;
     const barWidth = 56;
+    const half = barWidth / 2;       // rise over half the bar at 45°
     const round = (v) => Math.round(v * 10) / 10;
-    // Scale so the highest corner, count × (1 + |lean|), still fits
-    const highest = Math.max(...stats.lean.map((b) => b.count * (1 + Math.abs(b.lean))), 1);
-    const scale = room / highest;
+    const most = Math.max(...stats.distribution, 1);
+    const scale = (room - half) / most;      // the tallest bar still has room for a 45° rise
     const bars = [];
     const outlines = [];
     const labels = [];
     stats.lean.forEach((b, i) => {
       const cx = slot * i + slot / 2;
-      const x0 = cx - barWidth / 2;
-      const x1 = cx + barWidth / 2;
-      const h = b.count * scale;      // flat height = count
-      const d = b.lean * h;           // + : left (better grade) higher; ±h at lean ±1
-      const yLeft = base - h - d;
-      const yRight = base - h + d;
-      if (b.count) bars.push('<polygon class="lean-bar" points="' + [x0, base, x0, yLeft, x1, yRight, x1, base].map(round).join(' ') + '"/>');
-      if (b.count && Math.abs(d) >= 0.5) {
-        const yFlat = base - h;
-        const xLow = d > 0 ? x1 : x0;                       // the side whose corner sits below the flat top
-        const yLow = d > 0 ? yRight : yLeft;
-        outlines.push('<path class="flat-bar" d="M' + round(x0) + ' ' + round(yFlat) + 'H' + round(x1) +
-          'M' + round(xLow) + ' ' + round(yLow) + 'V' + round(yFlat) + '"/>');
+      const x0 = cx - half;
+      const x1 = cx + half;
+      const h = b.count * scale;              // flat height = count
+      const rise = Math.tan((b.lean * Math.PI) / 4) * half;   // angle = lean × 45°
+      const hLeft = h + rise;
+      const hRight = h - rise;
+      if (b.count) {
+        let points;
+        if (hRight < 0) points = [x0, base, x0, base - hLeft, cx + h / b.lean, base];        // cut at the baseline
+        else if (hLeft < 0) points = [cx - h / -b.lean, base, x1, base - hRight, x1, base];
+        else points = [x0, base, x0, base - hLeft, x1, base - hRight, x1, base];
+        bars.push('<polygon class="lean-bar" points="' + points.map(round).join(' ') + '"/>');
+        if (Math.abs(rise) >= 0.5) {
+          const yFlat = base - h;
+          const xLow = rise > 0 ? x1 : x0;                      // the side whose corner sits below the flat top
+          const yLow = base - Math.max(0, rise > 0 ? hRight : hLeft);
+          outlines.push('<path class="flat-bar" d="M' + round(x0) + ' ' + round(yFlat) + 'H' + round(x1) +
+            'M' + round(xLow) + ' ' + round(yLow) + 'V' + round(yFlat) + '"/>');
+        }
       }
-      bars.push('<text class="value-label" x="' + cx + '" y="' + round(Math.min(yLeft, yRight, base) - 8) + '" text-anchor="middle">' + b.count + '</text>');
+      const top = b.count ? Math.max(hLeft, hRight) : 0;
+      bars.push('<text class="value-label" x="' + cx + '" y="' + round(base - top - 8) + '" text-anchor="middle">' + b.count + '</text>');
       labels.push('<text x="' + cx + '" y="' + (base + 24) + '" text-anchor="middle">' + b.grade + '</text>');
     });
     return '<g class="series-1">' + bars.join('') + '</g>' + outlines.join('') +
