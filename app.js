@@ -467,8 +467,12 @@
   /* Notenspiegel with tilted tops. Height = number of people; the top
      tilts by where they sit inside the grade's percent range: left side
      higher = closer to the better grade, right side higher = closer to
-     the worse grade, level = centred. A dotted outline shows the regular
-     flat bar: its top, and its edge where the tilted top falls below it. */
+     the worse grade, level = centred. The tilt is a share of the bar's own
+     height: the low corner drops by |lean| × height, the high corner rises
+     by the same, so the area stays the count; with every result on the
+     bound (lean ±1) the low corner touches the baseline. A dotted outline
+     shows the regular flat bar: its top, and its edge where the tilted top
+     falls below it. */
   function leanText(b) {
     if (!b.count) return '–';
     const strength = Math.abs(b.lean);
@@ -482,12 +486,13 @@
   function leanChart(stats) {
     const width = 600;
     const base = 200;
-    const tallest = 150;
+    const room = 170;                // baseline to the highest corner, leaving space for the counts
     const slot = width / 6;
     const barWidth = 56;
-    const maxTilt = 22;              // half the height difference at lean ±1 (about 38°)
     const round = (v) => Math.round(v * 10) / 10;
-    const most = Math.max(...stats.distribution, 1);
+    // Scale so the highest corner, count × (1 + |lean|), still fits
+    const highest = Math.max(...stats.lean.map((b) => b.count * (1 + Math.abs(b.lean))), 1);
+    const scale = room / highest;
     const bars = [];
     const outlines = [];
     const labels = [];
@@ -495,8 +500,8 @@
       const cx = slot * i + slot / 2;
       const x0 = cx - barWidth / 2;
       const x1 = cx + barWidth / 2;
-      const h = b.count ? Math.max(3, (b.count / most) * tallest) : 0;
-      const d = b.count ? b.lean * Math.min(maxTilt, h - 2) : 0;
+      const h = b.count * scale;      // flat height = count
+      const d = b.lean * h;           // + : left (better grade) higher; ±h at lean ±1
       const yLeft = base - h - d;
       const yRight = base - h + d;
       if (b.count) bars.push('<polygon class="lean-bar" points="' + [x0, base, x0, yLeft, x1, yRight, x1, base].map(round).join(' ') + '"/>');
