@@ -224,9 +224,26 @@
     const m = mean(values);
     return Math.sqrt(values.reduce((a, x) => a + (x - m) ** 2, 0) / (values.length - 1));
   }
-  // Counts per 10 % band: 0–<10, …, 80–<90, 90 and more (bonus included)
-  const percentBins = (percents) => Array.from({ length: 10 }, (_, b) =>
-    percents.filter((p) => (b === 9 ? p >= 90 - 1e-7 : p >= b * 10 - 1e-7 && p < (b + 1) * 10 - 1e-7)).length);
+  /* Where the results of each grade sit inside its percent range: lean
+     −1 = all at the lower bound (next to the worse grade), 0 = centred,
+     +1 = all at the upper bound (next to the better grade). Bonus points
+     above 100 % count as 100 %. */
+  function gradeLean(rows) {
+    return KEY.map((band, i) => {
+      const lo = band.min;
+      const hi = i === 0 ? 100 : KEY[i - 1].min;
+      const mid = (lo + hi) / 2;
+      const half = (hi - lo) / 2;
+      const members = rows.filter((r) => r.grade === band.grade);
+      const positions = members.map((r) => Math.max(-1, Math.min(1, (Math.min(r.percent, 100) - mid) / half)));
+      return {
+        grade: band.grade,
+        count: members.length,
+        lean: members.length ? mean(positions) : 0,
+        meanPercent: members.length ? mean(members.map((r) => r.percent)) : null
+      };
+    });
+  }
 
   /* Text + settings → evaluated rows, skipped entries, statistics and
      the grades as text in the same layout as the input. */
@@ -272,7 +289,7 @@
         maxPercent: Math.max(...percents),
         passed: rows.filter((r) => r.grade <= 4).length,
         distribution: KEY.map((band) => rows.filter((r) => r.grade === band.grade).length),
-        percentBins: percentBins(percents)
+        lean: gradeLean(rows)
       }
     };
   }

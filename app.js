@@ -464,6 +464,48 @@
     $('print-facts').innerHTML = facts.map(([k, v]) => '<dt>' + escapeHtml(k) + '</dt><dd>' + escapeHtml(v) + '</dd>').join('');
   }
 
+  /* Notenspiegel with tilted tops. Height = number of people; the top
+     tilts by where they sit inside the grade's percent range: left side
+     higher = closer to the better grade, right side higher = closer to
+     the worse grade, level = centred. */
+  function leanText(b) {
+    if (!b.count) return '–';
+    const strength = Math.abs(b.lean);
+    if (strength < 0.2) return 'mittig';
+    const towards = b.lean > 0
+      ? (b.grade === 1 ? '100 %' : 'Note ' + (b.grade - 1))
+      : (b.grade === 6 ? '0 %' : 'Note ' + (b.grade + 1));
+    return (strength >= 0.6 ? 'deutlich' : 'eher') + ' Richtung ' + towards;
+  }
+
+  function leanChart(stats) {
+    const width = 600;
+    const base = 200;
+    const tallest = 150;
+    const slot = width / 6;
+    const barWidth = 56;
+    const maxTilt = 22;              // half the height difference at lean ±1 (about 38°)
+    const round = (v) => Math.round(v * 10) / 10;
+    const most = Math.max(...stats.distribution, 1);
+    const bars = [];
+    const labels = [];
+    stats.lean.forEach((b, i) => {
+      const cx = slot * i + slot / 2;
+      const x0 = cx - barWidth / 2;
+      const x1 = cx + barWidth / 2;
+      const h = b.count ? Math.max(3, (b.count / most) * tallest) : 0;
+      const d = b.count ? b.lean * Math.min(maxTilt, h - 2) : 0;
+      const yLeft = base - h - d;
+      const yRight = base - h + d;
+      if (b.count) bars.push('<polygon class="lean-bar" points="' + [x0, base, x0, yLeft, x1, yRight, x1, base].map(round).join(' ') + '"/>');
+      bars.push('<text class="value-label" x="' + cx + '" y="' + round(Math.min(yLeft, yRight, base) - 8) + '" text-anchor="middle">' + b.count + '</text>');
+      labels.push('<text x="' + cx + '" y="' + (base + 24) + '" text-anchor="middle">' + b.grade + '</text>');
+    });
+    return '<g class="series-1">' + bars.join('') + '</g>' +
+      '<line class="baseline" x1="0" x2="' + width + '" y1="' + base + '" y2="' + base + '"/>' +
+      '<g class="axis">' + labels.join('') + '</g>';
+  }
+
   function renderClass() {
     const { rows, skipped, empty, stats, gradesText: text } = G.evaluateList($('list').value, settings);
     gradesText = text;
@@ -489,22 +531,14 @@
     $('c-sd-percent').textContent = stats.sdPoints === null ? 'ab 2 Werten' : averageFormat.format(stats.sdPercent) + ' Prozentpunkte';
     $('c-range').textContent = num(stats.minPoints) + ' – ' + num(stats.maxPoints);
     $('c-range-percent').textContent = 'Punkte, ' + pct(stats.minPercent) + ' – ' + pctUnit(stats.maxPercent);
-    const mostInBin = Math.max(...stats.percentBins);
-    const binLabel = (b) => (b === 9 ? '90 % und mehr' : b * 10 + ' bis unter ' + (b + 1) * 10 + ' %');
-    $('c-hist').setAttribute('aria-label', 'Verteilung der Prozentwerte: ' + stats.percentBins.map((n, b) => binLabel(b) + ': ' + n).join(', '));
-    $('c-hist').innerHTML = stats.percentBins.map((n, b) =>
-      '<div class="bar-chart-item"><div class="bar-track"><div class="bar" style="height: ' + (mostInBin ? Math.round((n / mostInBin) * 100) : 0) + '%">' +
-      '<span class="bar-value">' + n + '</span></div></div><span class="bar-label">' + b * 10 + '</span></div>').join('');
-    $('c-hist-body').innerHTML = stats.percentBins.map((n, b) => '<tr><td>' + binLabel(b) + '</td><td class="numeric">' + n + '</td></tr>').join('');
-
-    const most = Math.max(...stats.distribution);
     $('c-chart-subtitle').textContent = stats.count + ' ausgewertet' + (empty ? ', ' + empty + ' leer' : '') + ', Ø Note ' + fixed(stats.averageGrade, 2);
-    $('c-chart').setAttribute('aria-label', 'Notenspiegel: ' + stats.distribution.map((n, i) => 'Note ' + (i + 1) + ': ' + n).join(', '));
-    $('c-chart').innerHTML = stats.distribution.map((n, i) =>
-      '<div class="bar-chart-item"><div class="bar-track"><div class="bar" style="height: ' + (most ? Math.round((n / most) * 100) : 0) + '%">' +
-      '<span class="bar-value">' + n + '</span></div></div><span class="bar-label">' + (i + 1) + '</span></div>').join('');
-    $('c-chart-body').innerHTML = stats.distribution.map((n, i) =>
-      '<tr><td>' + (i + 1) + ' (' + G.KEY[i].word + ')</td><td class="numeric">' + n + '</td><td class="numeric">' + pctUnit((n / stats.count) * 100) + '</td></tr>').join('');
+    $('c-chart').setAttribute('aria-label', 'Notenspiegel: ' + stats.lean.map((b) =>
+      'Note ' + b.grade + ': ' + b.count + (b.count ? ', ' + leanText(b) : '')).join('; '));
+    $('c-chart').innerHTML = leanChart(stats);
+    $('c-chart-body').innerHTML = stats.lean.map((b) =>
+      '<tr><td>' + b.grade + ' (' + G.KEY[b.grade - 1].word + ')</td><td class="numeric">' + b.count + '</td>' +
+      '<td class="numeric">' + pctUnit((b.count / stats.count) * 100) + '</td>' +
+      '<td class="numeric">' + (b.meanPercent === null ? '–' : pctUnit(b.meanPercent)) + '</td><td>' + leanText(b) + '</td></tr>').join('');
 
     $('c-rows').innerHTML = rows.map((r) =>
       '<tr>' +

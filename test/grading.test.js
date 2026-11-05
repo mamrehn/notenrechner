@@ -204,7 +204,20 @@ test('class statistics: median, standard deviation, range, percent bands', () =>
   assert.equal(stats.maxPercent, 100);
   // 25 %, 50 %, 75 %, 100 %, 62,5 %, 98,75 % → grades 6, 4, 3, 1, 4, 1
   assert.equal(stats.medianGrade, 3.5);
-  assert.deepEqual(stats.percentBins, [0, 0, 1, 0, 0, 1, 1, 1, 0, 2]);
-  const bonus = G.evaluateList('33', { max: 30, step: 0.5, bonus: 3 }).stats;
-  assert.equal(bonus.percentBins[9], 1, '110 % counts in the top band');
+});
+
+test('class statistics: where the results sit inside each grade', () => {
+  // „befriedigend“ is 67 – unter 81 %: centre 74 %, half width 7
+  const near2 = G.evaluateList('80 79', S(100)).stats.lean[2];
+  assert.equal(near2.count, 2);
+  assert.ok(Math.abs(near2.lean - 11 / 14) < 1e-9, 'upper half, towards grade 2');
+  const near4 = G.evaluateList('67 68', S(100)).stats.lean[2];
+  assert.ok(near4.lean < -0.8, 'lower half, towards grade 4');
+  const centred = G.evaluateList('70 78', S(100)).stats.lean[2];
+  assert.ok(Math.abs(centred.lean) < 1e-9);
+  assert.equal(G.evaluateList('100', S(100)).stats.lean[0].lean, 1);
+  assert.equal(G.evaluateList('0', S(100)).stats.lean[5].lean, -1);
+  assert.equal(G.evaluateList('33', { max: 30, step: 0.5, bonus: 3 }).stats.lean[0].lean, 1, 'bonus above 100 % counts as 100 %');
+  const empty = G.evaluateList('80', S(100)).stats.lean[0];
+  assert.deepEqual([empty.count, empty.lean, empty.meanPercent], [0, 0, null]);
 });

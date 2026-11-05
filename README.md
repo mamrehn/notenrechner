@@ -20,8 +20,10 @@ Der IHK-Notenschlüssel, umgerechnet auf jede Höchstpunktzahl:
     halben, ganzen oder 0,01 Punkten); Durchschnitt je Aufgabe in der Fußzeile
   - bleibt beim Neuladen erhalten (sessionStorage), verschwindet mit dem Tab
 - Für Lehrkräfte: Klasse auswerten (nur Punkte, keine Namen, beliebig getrennt, z. B.
-  „2 3  32 26 3.5 5,8“): Durchschnitt und Median, Standardabweichung, Spannweite,
-  Notenspiegel, Verteilung in 10-Prozent-Bereichen; Noten im selben Layout zurück nach Excel
+  „2 3  32 26 3.5 5,8“): Durchschnitt und Median, Standardabweichung, Spannweite;
+  Notenspiegel mit gekippter Oberkante: Sie zeigt, ob die Ergebnisse einer Note eher an der
+  besseren (links höher) oder an der schlechteren Nachbarnote liegen (rechts höher);
+  Noten im selben Layout zurück nach Excel
 - Zusatzpunkte, Farbschema automatisch / hell / dunkel (ein Knopf), funktioniert offline
 
 ## Grundlage
