@@ -1,0 +1,77 @@
+/* ================================================================
+   app.css — Notenrechner additions on top of style.css (unchanged).
+   Tokens only; no new class names, only attribute hooks set by app.js.
+   ================================================================ */
+
+/* The row matching the entered score. Like the current nav item:
+   bold + an ink bar, plus the „Ergebnis“ badge in the row, so it never
+   relies on color. aria-current lets screen readers announce it. */
+.data-table tbody tr[aria-current="true"] {
+  background: var(--color-hover);
+}
+
+.data-table tbody tr[aria-current="true"] > * {
+  font-weight: var(--font-weight-bold);
+}
+
+.data-table tbody tr[aria-current="true"] > :first-child {
+  box-shadow: inset 3px 0 0 var(--color-text);
+}
+
+/* Key table: a narrow grade column, the words take the slack, so the
+   point columns sit together on the right. */
+#key-table thead th:first-child {
+  width: 5rem;
+}
+
+#key-table thead th:nth-child(2) {
+  width: 40%;
+}
+
+#class-table thead th:nth-child(2) {
+  width: 40%;
+}
+
+/* Phones: the key table fits without sideways scrolling */
+@media (max-width: 640px) {
+  #key-table th,
+  #key-table td {
+    padding-inline: var(--space-2);
+  }
+
+  #key-table thead th {
+    white-space: normal;
+  }
+
+  #key-table thead th:first-child,
+  #key-table thead th:nth-child(2) {
+    width: auto;
+  }
+}
+
+/* Grades that no score can reach (very small maxima) */
+.data-table tbody tr[data-reachable="false"] > :not(:first-child) {
+  color: var(--color-text-muted);
+}
+
+/* List of skipped lines inside the warning alert */
+#class-skipped-list {
+  margin-top: var(--space-1);
+  padding-left: var(--space-5);
+  list-style: disc;
+}
+
+@media print {
+  /* Print the key (its heading names max and step) and, if filled in,
+     the class results — not the inputs, the help text or closed panels. */
+  [data-print="hide"],
+  details.collapsible:not([open]) {
+    display: none !important;
+  }
+
+  /* Print long tables completely instead of a scrolling window */
+  .table-scroll.sticky {
+    max-height: none;
+    overflow: visible;
+  }
+}

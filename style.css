@@ -1,0 +1,4065 @@
+/* ================================================================
+   B3 Schulportal Styleguide — style.css
+   Version 6.2 · light + dark · school blue + IT green
+
+   The one stylesheet for standalone B3 web apps. Documentation,
+   markup contracts and rules: STYLEGUIDE.md. Living demo: index.html.
+   Contrast claims are checked by `node tools/verify.mjs` — run it
+   after every token change.
+
+   Load order in an app:
+     <link rel="stylesheet" href="fonts/fonts.css">   (optional, self-hosted)
+     <link rel="stylesheet" href="style.css">
+     <script src="b3.js" defer></script>               (optional behaviors)
+
+   Brands:  default = school-wide BLUE (b3-fuerth.de logo #0085bf)
+            <html data-brand="it"> = IT-department GREEN variant
+   Themes:  default = light · <html data-theme="dark"> = dark
+            (dark is screen-only: printing always uses the light tokens)
+
+   App code never writes raw hex values — only these tokens.
+   UI embedded in Mebis/WebUntis/Oncoo uses mebis/b3-mebis.css instead.
+
+   Design language (v6): paper, not dashboard. White page, content
+   held by type and rules instead of floating cards; hairlines, no
+   drop shadows (only overlays cast one); crisp 2–4 px corners; one
+   ink rule (2 px) marks key figures and table heads; brand color is
+   reserved for things you can click; selection is shown in ink.
+   ================================================================ */
+
+/* ================================================================
+   1. DESIGN TOKENS — school-wide blue brand (default), light
+   ================================================================ */
+:root {
+  /* --- Brand ramp (B3 Fürth blue, logo/site color #0085bf) ----
+     500  icons, large display digits, decorative graphics (≥3:1)
+     600  DEFAULT for interactive fills and brand text on light bg
+     700  hover, focus ring, text on primary-50/100 tints
+     800  pressed/active                                          */
+  --color-primary-50:  #e9f5fb;
+  --color-primary-100: #c3e4f2;
+  --color-primary-500: #0085bf;
+  --color-primary-600: #0075aa;
+  --color-primary-700: #005a82;
+  --color-primary-800: #004666;
+
+  /* --- Status colors ------------------------------------------
+     Each status is a triple. RULE: text always uses *-text,
+     surfaces use *-bg, icons/borders/fills use *-icon (≥3:1 on
+     surface AND on their own -bg). Success is ALWAYS green,
+     independent of the brand.                                    */
+  --color-success-text: #2d7038;
+  --color-success-bg:   #d4f1d4;
+  --color-success-icon: #3d8b4d;
+  --color-success-deep:      #1f5527;  /* text on success tints */
+  --color-success-bg-strong: #c8e6d0;  /* grade cell "good" */
+
+  --color-error-text:   #b91f20;
+  --color-error-bg:     #ffdddd;
+  --color-error-icon:   #d62728;
+  --color-error-bg-strong: #ffd2d2;    /* grade cell "poor" (4.7:1 with error-text) */
+
+  --color-warning-text: #92400e;
+  --color-warning-bg:   #fff4e5;
+  --color-warning-icon: #b97300;       /* amber; v4 #ff7f0e was 2.5:1 on white */
+
+  --color-info-text:    #0d47a1;
+  --color-info-bg:      #e3f2fd;
+  --color-info-icon:    #1f77b4;
+
+  /* --- Mebis-blend accent (sparing use: Mebis references,
+     .badge.accent, complexity stars). Never a second primary.   */
+  --color-accent:      #e56a24;
+  --color-accent-text: #a34815;
+  --color-accent-bg:   #fbe3d3;
+
+  /* --- Audience (Zielgruppe): who a tool or material is for.
+     Categories, not status: teal and violet stay clear of the
+     brand blue/green and of every status hue. Badge text only. */
+  --color-student-text: #0b5c62;
+  --color-student-bg:   #ddf1f0;
+  --color-teacher-text: #57318d;
+  --color-teacher-bg:   #efe9f8;
+
+  /* --- Neutrals ------------------------------------------------ */
+  --color-surface:       #ffffff;  /* panels, inputs, modals, header */
+  --color-bg:            #ffffff;  /* page: paper, not a gray canvas */
+  --color-text:          #171c21;  /* ink — also the selected-state fill */
+  --color-text-muted:    #575f67;  /* AA on surface, bg and hover */
+  --color-border:        #dde0e3;  /* hairlines, panel edges */
+  --color-border-strong: #7c848b;  /* control outlines: ≥3:1 (WCAG 1.4.11) */
+  --color-rule:          #171c21;  /* the 2px ink rule over key figures and table heads */
+  --color-hover:         #f2f3f4;  /* hover rows, wells, panel footers */
+  --color-focus:         #005a82;
+  --color-on-primary:    #ffffff;  /* text/icons on primary-600/700 fills */
+  --color-backdrop:      rgba(16, 20, 24, 0.5);
+
+  /* Toasts are always dark, in both themes */
+  --color-toast-bg:      #171c21;
+  --color-toast-text:    #ffffff;
+  --color-toast-success: #7dd88f;
+  --color-toast-error:   #ff9d9d;
+  --color-toast-warning: #ffb366;
+  --color-toast-info:    #8ec4ee;
+
+  /* --- Code (dark terminal surface by default) ----------------- */
+  --code-bg:       #23282d;
+  --code-text:     #e8eaed;
+  --code-comment:  #9aa5ae;
+  --code-keyword:  #c792ea;
+  --code-string:   #a5d6a7;
+  --code-number:   #f5b971;
+  --code-function: #82c4f5;
+  --code-border:   rgba(255, 255, 255, 0.1);
+  /* Light code surface (.light) — Mebis-like worksheets */
+  --code-light-bg:       #f4f5f6;
+  --code-light-text:     #171c21;
+  --code-light-comment:  #575f67;
+  --code-light-keyword:  #7b3fa8;
+  --code-light-string:   #2d7038;
+  --code-light-number:   #9a4a00;
+  --code-light-function: #0d5c9e;
+  --code-light-border:   #dde0e3;
+
+  /* --- Chart colors (validated categorical palette, v5 order) --
+     Fixed order, assigned in sequence, never cycled or shuffled.
+     Six-check validator: all pass (adjacent normal ΔE ≥ 15.5,
+     CVD ΔE ≥ 11). Green/red/amber stay reserved for status.     */
+  --chart-1: #1f77b4;  /* blue    */
+  --chart-2: #d96c00;  /* orange  */
+  --chart-3: #0e8f9f;  /* teal    */
+  --chart-4: #9c5230;  /* brown   */
+  --chart-5: #c2418f;  /* magenta */
+  --chart-6: #6723a3;  /* violet  */
+  --chart-grid:  #dde0e3;
+  --chart-axis:  #171c21;  /* baseline: ink, the grid stays hairline */
+  --chart-label: #575f67;
+
+  /* --- Spacing (compact scale — intentional, keep dense) ------ */
+  --space-1: 4px;
+  --space-2: 6px;
+  --space-3: 10px;
+  --space-4: 12px;
+  --space-5: 16px;
+  --space-6: 18px;
+  --space-8: 24px;
+
+  /* --- Typography (rem so browser zoom and display mode work) -
+     Source Sans 3 runs smaller than most UI faces: 16px here reads
+     like 15px Inter and sets narrower, so the UI stays compact.
+     Scale ≈ 1.2 steps, rounded to whole pixels.                  */
+  --font-family: 'Source Sans 3', 'Source Sans Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Source Code Pro', ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+  --font-size-xs:   0.8125rem;  /* 13px */
+  --font-size-sm:   0.875rem;   /* 14px */
+  --font-size-base: 1rem;       /* 16px */
+  --font-size-lg:   1.1875rem;  /* 19px */
+  --font-size-xl:   1.375rem;   /* 22px */
+  --font-size-2xl:  1.75rem;    /* 28px */
+  --font-size-metric: 2.25rem;  /* 36px key figure */
+  --font-size-hero:   3.25rem;  /* 52px — one hero figure per view */
+  --font-size-timer:  7rem;     /* 112px exam countdown */
+  --font-weight-normal:   400;
+  --font-weight-medium:   600;  /* labels, buttons, nav (Source Sans has no visible 500) */
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;  /* headings, key figures */
+  --line-height-tight:   1.2;
+  --line-height-normal:  1.4;
+  --line-height-relaxed: 1.55;  /* learning content (.prose) */
+
+  /* --- Radii, shadows, motion ---------------------------------
+     Crisp corners. Nothing on the page casts a shadow; only things
+     that float above it (menu, dialog, toast) do.                 */
+  --radius-sm:   2px;
+  --radius:      3px;
+  --radius-lg:   4px;
+  --radius-full: 999px;          /* switch track and round markers only */
+  --shadow-sm: none;
+  --shadow:    none;
+  --shadow-md: 0 2px 6px rgba(16, 20, 24, 0.12);
+  --shadow-lg: 0 10px 28px rgba(16, 20, 24, 0.18), 0 1px 3px rgba(16, 20, 24, 0.10);
+  --transition-fast: 150ms ease;
+  --transition-base: 200ms ease;
+  --transition-slow: 300ms ease;
+
+  /* --- Layout -------------------------------------------------- */
+  --header-height: 56px;
+  --sidebar-width: 232px;
+  --content-max-width: 1600px;
+  --form-max-width: 40rem;
+  --z-header: 100;
+  --z-toast: 1000;
+
+  color-scheme: light;
+}
+
+/* ================================================================
+   1b. IT-DEPARTMENT GREEN VARIANT — <html data-brand="it">
+   Only the brand ramp changes; neutrals, status colors and charts
+   are shared. (Anchored to the IT logo #27982d.)
+   ================================================================ */
+[data-brand="it"] {
+  --color-primary-50:  #eef7f0;
+  --color-primary-100: #c8e6d0;
+  --color-primary-500: #3d8b4d;
+  --color-primary-600: #2d7038;
+  --color-primary-700: #1f5527;
+  --color-primary-800: #16401d;
+  --color-focus:       #1f5527;
+}
+
+/* ================================================================
+   1c. DARK THEME — <html data-theme="dark">, screen only.
+   Same token names, re-verified values. Components need no dark
+   rules: they read tokens. Persist the choice in localStorage
+   ('b3-theme'); b3.js does this for you.
+   ================================================================ */
+@media screen {
+  [data-theme="dark"] {
+    color-scheme: dark;
+
+    --color-primary-50:  #12303f;
+    --color-primary-100: #1a4257;
+    --color-primary-500: #3fa3d3;
+    --color-primary-600: #5cb5de;  /* interactive blue: fills + brand text */
+    --color-primary-700: #7fc7e8;
+    --color-primary-800: #a5d8f0;
+
+    --color-success-text: #85d695;
+    --color-success-bg:   #17301d;
+    --color-success-icon: #5cb570;
+    --color-success-deep:      #85d695;
+    --color-success-bg-strong: #24402c;
+
+    --color-error-text:   #ff9e9e;
+    --color-error-bg:     #3a1a1a;
+    --color-error-icon:   #e06666;
+    --color-error-bg-strong: #4a2020;
+
+    --color-warning-text: #f0a95e;
+    --color-warning-bg:   #362413;
+    --color-warning-icon: #ff9033;
+
+    --color-info-text:    #8ec4ee;
+    --color-info-bg:      #14283a;
+    --color-info-icon:    #4f97cf;
+
+    --color-accent:      #f08b52;
+    --color-accent-text: #f0a172;
+    --color-accent-bg:   #3d2416;
+
+    --color-student-text: #7fd1cc;
+    --color-student-bg:   #12312f;
+    --color-teacher-text: #c6b0ee;
+    --color-teacher-bg:   #2a2340;
+
+    --color-surface:       #1b1e21;
+    --color-bg:            #1b1e21;
+    --color-text:          #eceef0;
+    --color-text-muted:    #a8afb6;
+    --color-border:        #363b40;
+    --color-border-strong: #7d858c;
+    --color-rule:          #eceef0;
+    --color-hover:         #26292d;
+    --color-focus:         #7fc7e8;
+    --color-on-primary:    #062736;  /* dark text on the light-blue fills */
+    --color-backdrop:      rgba(0, 0, 0, 0.65);
+
+    --color-toast-bg:   #0e1012;
+    --color-toast-text: #eceef0;
+
+    --code-bg: #131517;
+    --code-border: rgba(255, 255, 255, 0.08);
+    /* .light code blocks stay dark in the dark theme */
+    --code-light-bg:       #131517;
+    --code-light-text:     #e8eaed;
+    --code-light-comment:  #9aa5ae;
+    --code-light-keyword:  #c792ea;
+    --code-light-string:   #a5d6a7;
+    --code-light-number:   #f5b971;
+    --code-light-function: #82c4f5;
+    --code-light-border:   #363b40;
+
+    /* Same six hues, stepped for the dark surface (validated) */
+    --chart-1: #4f97cf;
+    --chart-2: #db7514;
+    --chart-3: #0899a4;
+    --chart-4: #b8724e;
+    --chart-5: #cc549f;
+    --chart-6: #7c56d7;
+    --chart-grid:  #363b40;
+    --chart-axis:  #a8afb6;
+    --chart-label: #a8afb6;
+
+    --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  }
+
+  /* IT variant × dark — green ramp re-stepped for dark surfaces */
+  [data-brand="it"][data-theme="dark"] {
+    --color-primary-50:  #1b2f21;
+    --color-primary-100: #24402c;
+    --color-primary-500: #58a86b;
+    --color-primary-600: #6cc180;
+    --color-primary-700: #85d695;
+    --color-primary-800: #a5e0b1;
+    --color-focus:       #85d695;
+    --color-on-primary:  #10321a;
+  }
+}
+
+/* ================================================================
+   2. RESET & BASE
+   ================================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Anchor targets and keyboard focus never hide under the sticky
+     header (WCAG 2.2 — 2.4.11 Focus Not Obscured). */
+  scroll-padding-top: calc(var(--header-height) + var(--space-4));
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-kerning: normal;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text);
+}
+
+h1 { font-size: var(--font-size-2xl); }
+h2 { font-size: var(--font-size-xl); }
+h3 { font-size: var(--font-size-lg); }
+h4, h5, h6 { font-size: var(--font-size-base); }
+
+img, svg, video {
+  max-width: 100%;
+  display: block;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+fieldset {
+  border: 0;
+  min-width: 0;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-5) 0;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+::selection {
+  background: var(--color-primary-100);
+  color: var(--color-text);
+}
+
+/* Links in running text are underlined: link blue vs. body text is
+   below 3:1, so color alone would not mark them (WCAG 1.4.1).
+   Navigational components remove the underline themselves. */
+a {
+  color: var(--color-primary-600);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-primary-700);
+  text-decoration-thickness: 2px;
+}
+
+/* Native controls pick up the brand color for free */
+input[type="checkbox"],
+input[type="radio"],
+progress {
+  accent-color: var(--color-primary-600);
+}
+
+/* Focus: one ring for everything. outline follows border-radius in
+   all current browsers, survives forced-colors mode and never
+   changes the element's shape. Do not remove it. */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ================================================================
+   3. ACCESSIBILITY UTILITIES
+   ================================================================ */
+
+/* Screen-reader-only text (labels, captions, star ratings) */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* First focusable element on every page: <a class="skip-link" href="#main"> */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--space-4);
+  z-index: 200;
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-primary-700);
+  color: var(--color-on-primary);
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ================================================================
+   4. APP SHELL — header, sidebar, main, footer
+   ================================================================ */
+
+/* Header: a letterhead, not a toolbar. Typographic lockup on the
+   left — the B3 wordmark, a hairline, the app name — and a single
+   rule below. The brand color appears once, in the wordmark. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: var(--header-height);
+  padding: 0 var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+a.app-brand:hover {
+  color: var(--color-text);
+}
+
+/* "B3" wordmark — <span class="brand-mark" aria-hidden="true">B3</span>.
+   Set in type, tightly tracked; no tile, no badge. */
+.brand-mark {
+  flex-shrink: 0;
+  color: var(--color-primary-600);
+  font-size: 1.625rem;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.app-brand-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: 32px;
+  padding-left: var(--space-4);
+  border-left: 1px solid var(--color-border-strong);
+}
+
+/* Without the wordmark (projects that are not an offering of the
+   school itself): the text block starts flush, no hairline. */
+.app-brand-text:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.app-title,
+.app-header h1 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-subtitle {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.app-layout {
+  display: flex;
+  flex: 1;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  width: 100%;
+}
+
+.sidebar {
+  position: sticky;
+  top: var(--header-height);
+  align-self: flex-start;
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  max-height: calc(100vh - var(--header-height));
+  overflow-y: auto;
+  padding: var(--space-5) 0;
+  border-right: 1px solid var(--color-border);
+}
+
+.sidebar-nav ul {
+  list-style: none;
+}
+
+/* Optional group heading inside the nav: <li class="nav-label">Daten</li>.
+   Sentence case, small and bold — no tracked capitals. */
+.nav-label {
+  margin-top: var(--space-5);
+  padding: var(--space-1) var(--space-6);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+}
+
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-6);
+  min-height: 34px;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background var(--transition-fast);
+}
+
+.sidebar-nav a svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.sidebar-nav a:hover {
+  background: var(--color-hover);
+  color: var(--color-text);
+}
+
+/* Current page: bold ink + a brand bar on the column edge.
+   No tinted pill — weight and the bar carry it (not color alone). */
+.sidebar-nav a.active,
+.sidebar-nav a[aria-current="page"] {
+  color: var(--color-text);
+  font-weight: var(--font-weight-bold);
+  box-shadow: inset 3px 0 0 var(--color-primary-600);
+}
+
+.sidebar-nav a[aria-current="page"] svg {
+  color: var(--color-text);
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0; /* let tables/charts shrink instead of overflowing */
+  padding: var(--space-6) var(--space-8) calc(2 * var(--space-8));
+}
+
+/* Sections inside main get clear separation (proximity: sections
+   are further apart than the cards inside them). */
+.main-content > section + section,
+.section + .section {
+  margin-top: var(--space-8);
+}
+
+/* Footer — public school offerings link Impressum, Datenschutz and
+   the Erklärung zur Barrierefreiheit (BayBITV). */
+.app-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.app-footer nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  list-style: none;
+}
+
+.app-footer a {
+  color: var(--color-text-muted);
+}
+
+.app-footer a:hover {
+  color: var(--color-text);
+}
+
+/* ================================================================
+   5. PAGE STRUCTURE — page header, section header, cards
+   ================================================================ */
+
+/* Page header: (breadcrumb) + h1 + lede + actions on the right */
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+  margin-bottom: var(--space-8);
+}
+
+.page-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+}
+
+.page-lede {
+  margin-top: var(--space-2);
+  max-width: 70ch;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-lg);
+  line-height: var(--line-height-normal);
+}
+
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Section header — a section opens with the ink rule, then its h2.
+   An icon is optional and stays muted; most sections need none. */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding-top: var(--space-3);
+  border-top: 2px solid var(--color-rule);
+}
+
+.section-header svg {
+  align-self: center;
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.section-header h2 {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+/* Optional right-aligned actions or meta in the section header */
+.section-header > :last-child:not(h2):not(svg) {
+  margin-left: auto;
+}
+
+.section-header.compact {
+  margin-bottom: var(--space-3);
+  padding-top: var(--space-2);
+  border-top-width: 1px;
+}
+
+.section-header.compact h2 {
+  font-size: var(--font-size-lg);
+}
+
+/* Card — a panel drawn with one hairline, no shadow: it sits on
+   the page, it does not float above it. Don't nest cards in cards. */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.card-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text);
+}
+
+.card-subtitle {
+  margin-top: 2px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin: var(--space-5) calc(-1 * var(--space-5)) calc(-1 * var(--space-5));
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-hover);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+/* Flush card: content touches the edges (tables, lists). Header and
+   footer keep their padding. */
+.card.flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.card.flush > .card-header {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.card.flush > .card-footer {
+  margin: 0;
+}
+
+.card.flush > .toolbar {
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* --- Pictograms (STYLEGUIDE § 5.7) --------------------------------
+   A small drawing of how a tool works, so the tiles of a catalog can
+   be told apart at a glance. Not an icon tile: no box and no tint
+   behind it — it is drawn on the panel like a figure in a handout.
+   48 × 48 grid, one stroke weight. Ink draws the object, .muted the
+   context, one or two chart hues what the tool does. */
+.pictogram {
+  flex-shrink: 0;
+  width: 3.5rem;
+  height: 3.5rem;
+  color: var(--color-text);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Hues: the chart palette (≥ 3:1 on surface in both themes) */
+.pictogram .muted   { color: var(--color-text-muted); }
+.pictogram .blue    { color: var(--chart-1); }
+.pictogram .orange  { color: var(--chart-2); }
+.pictogram .teal    { color: var(--chart-3); }
+.pictogram .brown   { color: var(--chart-4); }
+.pictogram .magenta { color: var(--chart-5); }
+.pictogram .violet  { color: var(--chart-6); }
+
+/* Fills keep the outline, so filled and open shapes line up */
+.pictogram .solid  { fill: currentColor; }
+.pictogram .tint   { fill: currentColor; fill-opacity: 0.16; }
+.pictogram .paper  { fill: var(--color-surface); }  /* covers what lies behind */
+.pictogram .wash   { fill: var(--color-hover); }    /* neutral area */
+.pictogram .dotted { stroke-dasharray: 0 4; }       /* round dots */
+
+/* Pictogram first in a card header: drawing, then title — side by side */
+.card-header:has(> .pictogram:first-child) {
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+
+/* The same catalog as a table: .small in the row header, next to the name */
+.pictogram.small {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.pictogram-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* ================================================================
+   6. LAYOUT PRIMITIVES — compose pages from these instead of
+   ad-hoc flex utilities. All gaps come from the spacing scale.
+   ================================================================ */
+
+/* Vertical rhythm: children separated by one gap */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stack.tight { gap: var(--space-2); }
+.stack.loose { gap: var(--space-8); }
+
+/* Horizontal group that wraps: buttons, badges, filters */
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* One thing left, one thing right (title + actions); wraps on small screens */
+.split {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* Responsive card grid: as many columns of ≥ 16rem as fit.
+   .cols-2/3/4 fix the count on wide screens and collapse below. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: var(--space-4);
+}
+
+.grid > * {
+  min-width: 0; /* wide content (code, tables) scrolls instead of stretching the page */
+}
+
+.grid > .card {
+  margin-bottom: 0;
+}
+
+.grid.cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.grid .span-2 { grid-column: span 2; }
+.grid .span-full { grid-column: 1 / -1; }
+
+/* Readable width for forms and single-column content;
+   .narrow.centered for single-view tools */
+.narrow {
+  max-width: var(--form-max-width);
+}
+
+.centered {
+  margin-inline: auto;
+}
+
+/* ================================================================
+   7. BUTTONS
+   Intent, not status: primary (one per view) · secondary (every
+   other action) · ghost (toolbars, header, low emphasis) · danger
+   (destructive, quiet). All variants share the same box size.
+   ================================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: var(--space-2) var(--space-5);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.btn:hover {
+  color: var(--color-text);
+}
+
+.btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.btn.primary {
+  background: var(--color-primary-600);
+  border-color: var(--color-primary-600);
+  color: var(--color-on-primary);
+}
+
+.btn.primary:hover {
+  background: var(--color-primary-700);
+  border-color: var(--color-primary-700);
+  color: var(--color-on-primary);
+}
+
+.btn.primary:active {
+  background: var(--color-primary-800);
+  border-color: var(--color-primary-800);
+}
+
+/* .outline is the v4 name — identical to .secondary */
+.btn.secondary,
+.btn.outline {
+  background: var(--color-surface);
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.btn.secondary:hover,
+.btn.outline:hover {
+  background: var(--color-hover);
+}
+
+.btn.secondary:active,
+.btn.outline:active {
+  background: var(--color-border);
+}
+
+.btn.ghost {
+  color: var(--color-text);
+}
+
+.btn.ghost:hover {
+  background: var(--color-hover);
+}
+
+.btn.ghost:active {
+  background: var(--color-border);
+}
+
+/* Danger is QUIET: red text + border, tint on hover — never a solid
+   red fill. The confirmation dialog it opens is the real guard. */
+.btn.danger {
+  background: var(--color-surface);
+  border-color: var(--color-error-text);
+  color: var(--color-error-text);
+}
+
+.btn.danger:hover {
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+}
+
+.btn.small {
+  min-height: 30px;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.btn.small svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn.large {
+  min-height: 44px;
+  padding: var(--space-3) var(--space-8);
+  font-size: var(--font-size-lg);
+}
+
+.btn.block {
+  width: 100%;
+}
+
+/* Icon-only button — MUST carry aria-label. Square. */
+.btn.icon-only {
+  min-width: 36px;
+  padding: var(--space-2);
+}
+
+.btn.small.icon-only {
+  min-width: 30px;
+  padding: var(--space-1);
+}
+
+/* Disabled looks disabled in every variant (not a pale primary) */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  background: var(--color-hover);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Busy: <button class="btn primary" aria-busy="true" disabled> —
+   spinner before the label; keep the label ("Wird gespeichert …") */
+.btn[aria-busy="true"]::before,
+.spinner {
+  content: '';
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: b3-spin 700ms linear infinite;
+}
+
+.btn[aria-busy="true"] {
+  cursor: progress;
+}
+
+@keyframes b3-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ================================================================
+   8. PILLS (filter chips / tags) & BADGES
+   The class is still called "pill"; the shape is a crisp tag.
+   ================================================================ */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 30px;
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+button.pill {
+  cursor: pointer;
+}
+
+button.pill:hover {
+  background: var(--color-hover);
+}
+
+/* Selected filter: ink fill + check mark (not color alone). Selection
+   is shown in ink everywhere, so brand blue keeps meaning "action". */
+.pill.active,
+.pill[aria-pressed="true"] {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-surface);
+}
+
+button.pill[aria-pressed="true"]:hover {
+  background: var(--color-text);
+}
+
+.pill[aria-pressed="true"]::before {
+  content: '';
+  width: 0.7em;
+  height: 0.38em;
+  margin-top: -0.2em;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  flex-shrink: 0;
+}
+
+.pill.info {
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+  border-color: var(--color-info-icon);
+}
+
+.pill.warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border-color: var(--color-warning-icon);
+}
+
+.pill.compact {
+  min-height: 24px;
+  padding: 2px var(--space-3);
+  font-size: var(--font-size-xs);
+}
+
+/* Removable tag: the pill is a <span>; only the nested
+   <button class="remove-btn" aria-label="… entfernen"> is interactive. */
+.pill.removable {
+  padding-right: var(--space-1);
+}
+
+.pill .remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pill .remove-btn:hover {
+  background: var(--color-hover);
+  color: var(--color-text);
+}
+
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Badge: static status label. The text carries the meaning. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.35;
+  white-space: nowrap;
+  background: var(--color-hover);
+  color: var(--color-text-muted);
+}
+
+.badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+.badge.success { background: var(--color-success-bg); color: var(--color-success-deep); }
+.badge.error   { background: var(--color-error-bg);   color: var(--color-error-text); }
+.badge.warning { background: var(--color-warning-bg); color: var(--color-warning-text); }
+.badge.info    { background: var(--color-info-bg);    color: var(--color-info-text); }
+.badge.neutral { background: var(--color-hover);      color: var(--color-text-muted); }
+.badge.accent  { background: var(--color-accent-bg);  color: var(--color-accent-text); }
+.badge.brand   { background: var(--color-primary-50); color: var(--color-primary-700); }
+
+/* Audience badge (Zielgruppe): .badge.student „Für Lernende“,
+   .badge.teacher „Für Lehrkräfte“ — with an icon, so the colour
+   is never the only cue. */
+.badge.student { background: var(--color-student-bg); color: var(--color-student-text); }
+.badge.teacher { background: var(--color-teacher-bg); color: var(--color-teacher-text); }
+
+/* Outlined mini-tag (Pflicht / optional / IHK-relevant): a ruled
+   label instead of a filled chip; text keeps its own case. */
+.badge.tag {
+  background: transparent;
+  box-shadow: inset 0 0 0 1px currentColor;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  padding: 0 var(--space-2);
+}
+
+/* ================================================================
+   9. FEEDBACK — alerts, toasts, spinner
+   ================================================================ */
+
+/* Alert: persistent inline message. role="alert" for errors,
+   role="status" for the rest. Always icon + text. Set like a notice
+   in a printed handout: a 2px rule in the status color on top, a
+   pale tint below, square corners — no side stripe. */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-top: 2px solid var(--color-border-strong);
+  background: var(--color-hover);
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-base);
+}
+
+.alert svg {
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.alert > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-title {
+  display: block;
+  font-weight: var(--font-weight-semibold);
+}
+
+.alert-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.alert strong {
+  font-weight: var(--font-weight-semibold);
+}
+
+.alert.success {
+  background: color-mix(in srgb, var(--color-success-bg) 60%, var(--color-surface));
+  border-top-color: var(--color-success-icon);
+  color: var(--color-success-deep);
+}
+
+.alert.success > svg { color: var(--color-success-icon); }
+
+.alert.error {
+  background: color-mix(in srgb, var(--color-error-bg) 60%, var(--color-surface));
+  border-top-color: var(--color-error-icon);
+  color: var(--color-error-text);
+}
+
+.alert.error > svg { color: var(--color-error-icon); }
+
+.alert.warning {
+  background: color-mix(in srgb, var(--color-warning-bg) 60%, var(--color-surface));
+  border-top-color: var(--color-warning-icon);
+  color: var(--color-warning-text);
+}
+
+.alert.warning > svg { color: var(--color-warning-icon); }
+
+.alert.info {
+  background: color-mix(in srgb, var(--color-info-bg) 60%, var(--color-surface));
+  border-top-color: var(--color-info-icon);
+  color: var(--color-info-text);
+}
+
+.alert.info > svg { color: var(--color-info-icon); }
+
+.alert a {
+  color: inherit;
+}
+
+/* Toasts: transient confirmations, bottom right, stacked in a
+   live region (b3.js creates <div class="toast-region">). Dark
+   neutral surface; status via accent border + icon. Errors stay
+   until dismissed (WCAG 2.2.1). */
+.toast-region {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-3);
+  max-width: min(28rem, calc(100vw - 2 * var(--space-4)));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-toast-bg);
+  color: var(--color-toast-text);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--font-size-base);
+  pointer-events: auto;
+  animation: b3-toast-in var(--transition-base);
+}
+
+/* v4 markup: a lone .toast appended to <body> */
+body > .toast {
+  position: fixed;
+  right: var(--space-6);
+  bottom: var(--space-6);
+  z-index: var(--z-toast);
+}
+
+.toast svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.toast.success svg { color: var(--color-toast-success); }
+.toast.error svg   { color: var(--color-toast-error); }
+.toast.warning svg { color: var(--color-toast-warning); }
+.toast.info svg    { color: var(--color-toast-info); }
+
+.toast-close {
+  margin-left: auto;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.toast-close:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+@keyframes b3-toast-in {
+  from { transform: translateY(6px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+/* Inline loading: <span class="loading"><span class="spinner"></span> Lädt …</span> */
+.loading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* ================================================================
+   10. OVERLAYS — modal (<dialog>), dropdown menu (popover)
+   ================================================================ */
+
+/* Modal — native <dialog class="modal">, opened with showModal():
+   focus trap, ESC and ::backdrop for free. */
+dialog.modal {
+  margin: auto;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  max-width: 560px;
+  width: calc(100% - 2 * var(--space-5));
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+dialog.modal[open] {
+  animation: b3-modal-in var(--transition-base);
+}
+
+dialog.modal.wide {
+  max-width: 880px;
+}
+
+dialog.modal::backdrop {
+  background: var(--color-backdrop);
+}
+
+@keyframes b3-modal-in {
+  from { transform: translateY(6px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.modal-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.modal-close {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2)) 0 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.modal-close:hover {
+  color: var(--color-text);
+  background: var(--color-hover);
+}
+
+.modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.modal-footer form {
+  display: contents;
+}
+
+/* Dropdown menu — popover API, positioned by b3.js:
+   <button class="btn secondary" popovertarget="m1" aria-haspopup="menu">…</button>
+   <div class="menu" id="m1" popover role="menu">
+     <button class="menu-item" role="menuitem">…</button></div> */
+.menu {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  min-width: 12rem;
+  max-width: 20rem;
+  padding: var(--space-1);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.menu:popover-open {
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 34px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  text-align: left;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: var(--color-hover);
+  color: var(--color-text);
+}
+
+.menu-item:focus-visible {
+  outline-offset: -2px;
+}
+
+.menu-item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.menu-item.danger,
+.menu-item.danger svg {
+  color: var(--color-error-text);
+}
+
+.menu-separator {
+  height: 1px;
+  margin: var(--space-1) 0;
+  border: 0;
+  background: var(--color-border);
+}
+
+.menu-label {
+  padding: var(--space-2) var(--space-3) var(--space-1);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-muted);
+}
+
+/* ================================================================
+   11. NAVIGATION — breadcrumb, tabs, pager
+   ================================================================ */
+.breadcrumb {
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.breadcrumb li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.breadcrumb li + li::before {
+  content: '/';
+  color: var(--color-border-strong);
+}
+
+.breadcrumb a {
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-decoration-color: var(--color-border-strong);
+}
+
+.breadcrumb a:hover {
+  color: var(--color-text);
+  text-decoration-color: currentColor;
+}
+
+.breadcrumb [aria-current="page"] {
+  color: var(--color-text);
+}
+
+/* Tabs: role="tablist" / role="tab" + aria-selected, roving
+   tabindex, arrow keys — b3.js wires this up. */
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-5);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab {
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.tab:hover {
+  color: var(--color-text);
+  border-bottom-color: var(--color-border-strong);
+}
+
+.tab:focus-visible {
+  outline-offset: -2px;
+}
+
+.tab.active,
+.tab[aria-selected="true"] {
+  color: var(--color-text);
+  border-bottom-color: var(--color-text);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Pager — prev/next + position (quiz questions, flashcards, chapters) */
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.pager-count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Toolbar — one row above the content it scopes: search, filters,
+   actions. <div class="toolbar">…<span class="toolbar-spacer"></span>…</div> */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.toolbar .search-container {
+  flex: 1 1 14rem;
+  max-width: 22rem;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+/* ================================================================
+   12. FORMS
+   ================================================================ */
+.form-group {
+  margin-bottom: var(--space-5);
+}
+
+.form-label,
+legend.form-label {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+/* Mark required fields with * AND the required attribute on the input */
+.form-label.required::after {
+  content: ' *';
+  color: var(--color-error-text);
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  display: block;
+  width: 100%;
+  min-height: 38px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  transition: border-color var(--transition-fast);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.form-input:hover,
+.form-textarea:hover,
+.form-select:hover {
+  border-color: var(--color-text-muted);
+}
+
+.form-input:focus-visible,
+.form-textarea:focus-visible,
+.form-select:focus-visible {
+  border-color: var(--color-primary-600);
+  outline-offset: 1px;
+}
+
+.form-input:disabled,
+.form-textarea:disabled,
+.form-select:disabled {
+  background-color: var(--color-hover);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}
+
+/* Select with a chevron drawn in currentColor (works in dark mode) */
+.form-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 36px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 18px) 55%, calc(100% - 13px) 55%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: var(--line-height-relaxed);
+}
+
+.form-hint {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Validation error: aria-invalid="true" on the input and
+   aria-describedby pointing to the .form-error element. */
+.form-input.error,
+.form-textarea.error,
+.form-select.error,
+.form-input[aria-invalid="true"],
+.form-textarea[aria-invalid="true"],
+.form-select[aria-invalid="true"] {
+  border-color: var(--color-error-icon);
+}
+
+.form-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-error-text);
+  font-weight: var(--font-weight-medium);
+}
+
+.form-error svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* Multi-column form: fields flow into as many ≥ 14rem columns as fit */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  gap: 0 var(--space-5);
+}
+
+.form-grid .span-full {
+  grid-column: 1 / -1;
+}
+
+/* Button row at the end of a form: primary first, left-aligned */
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+/* Search input with magnifier icon; needs a (visually hidden) label */
+.search-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.search-container svg {
+  position: absolute;
+  left: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.search-container .form-input {
+  padding-left: 36px;
+}
+
+/* Time input — tabular digits, centered */
+.time-input {
+  width: 88px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Inline checkbox/radio with label: <label class="check"><input type="checkbox"> Text</label> */
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 28px;
+  cursor: pointer;
+}
+
+.check input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* Switch — on/off setting that applies immediately:
+   <label class="switch"><input type="checkbox" role="switch"> Text</label> */
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 28px;
+  cursor: pointer;
+}
+
+.switch input {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--color-border-strong);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.switch input::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  transition: transform var(--transition-fast);
+}
+
+.switch input:checked {
+  background: var(--color-primary-600);
+}
+
+.switch input:checked::before {
+  transform: translateX(16px);
+}
+
+.switch input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Range slider — always render the live value (<output class="range-value">) */
+.range-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--color-border-strong);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--color-primary-600);
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--color-primary-600);
+  cursor: pointer;
+}
+
+.range-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--color-primary-600);
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--color-primary-600);
+  cursor: pointer;
+}
+
+.range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.range-value {
+  text-align: center;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Radio / checkbox option rows — selection styled via :has(), no JS */
+.radio-group,
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.radio-option,
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.radio-option:hover,
+.checkbox-option:hover {
+  background: var(--color-hover);
+}
+
+.radio-option input,
+.checkbox-option input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.option-hint {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.radio-option:has(input:checked),
+.checkbox-option:has(input:checked),
+.radio-option.selected,
+.checkbox-option.selected {
+  border-color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--color-text);
+}
+
+/* Upload zone (drag & drop). Keep a real <input type="file"> inside
+   the <label>; b3.js toggles .dragover. Keyboard focus on the hidden
+   input is shown on the zone itself. A compact, left-aligned drop
+   target — icon beside the text, not a centered hero. */
+.upload-zone {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0 var(--space-4);
+  padding: var(--space-5);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.upload-zone > :not(svg) {
+  grid-column: 2;
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+  border-color: var(--color-primary-600);
+  border-style: solid;
+  background: var(--color-hover);
+}
+
+.upload-zone:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.upload-zone svg {
+  grid-row: 1 / span 2;
+  width: 28px;
+  height: 28px;
+  color: var(--color-text-muted);
+}
+
+.upload-zone strong {
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+}
+
+/* File list — what was picked/uploaded. Pairs with .upload-zone. */
+.file-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  list-style: none;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.file-item > svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  display: block;
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-meta {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.file-item .progress {
+  margin-top: var(--space-2);
+  height: 4px;
+}
+
+/* ================================================================
+   13. DATA — metrics, tables, key-value lists
+   ================================================================ */
+
+/* Key figure: label · value · trend (signed, vs. a named period).
+   Typeset like the figures in an annual report: a 2px ink rule on
+   top, label, big number — no tile, no shadow. Wraps cleanly
+   because every figure carries its own rule. */
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--space-3);
+  border-top: 2px solid var(--color-rule);
+  min-width: 0;
+}
+
+.metric-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Proportional figures: tabular-nums looks loose at display sizes */
+.metric-value {
+  margin-top: 2px;
+  font-size: var(--font-size-metric);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: proportional-nums;
+  color: var(--color-text);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.metric-unit {
+  margin-left: 3px;
+  font-size: 0.5em;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  letter-spacing: 0;
+}
+
+.metric.hero .metric-value {
+  font-size: var(--font-size-hero);
+}
+
+.metric.compact {
+  padding-top: var(--space-2);
+  border-top-width: 1px;
+}
+
+.metric.compact .metric-value {
+  font-size: var(--font-size-2xl);
+}
+
+.metric-trend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.metric-trend.positive { color: var(--color-success-text); }
+.metric-trend.negative { color: var(--color-error-text); }
+
+/* "ggü. Vorwoche" — the named comparison period, always muted */
+.metric-context {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-normal);
+}
+
+.metric-group {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(9.5rem, 100%), 1fr));
+  gap: var(--space-6) var(--space-8);
+  margin-bottom: var(--space-8);
+}
+
+/* Table: <caption> (may be .visually-hidden), scope="col"/"row",
+   .numeric for right-aligned figures, wrapped in .table-scroll. */
+/* position: relative keeps absolutely positioned children (e.g. a
+   .visually-hidden header label) inside the scroll box — otherwise
+   they escape and widen the whole page on phones. */
+.table-scroll {
+  position: relative;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Long class lists: sticky header inside a scrolling box */
+.table-scroll.sticky {
+  max-height: 70vh;
+  overflow: auto;
+}
+
+.table-scroll.sticky thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  font-size: var(--font-size-base);
+}
+
+/* Booktabs-style: no fills, no vertical lines. The head is set in
+   small bold ink over a 2px rule; rows are divided by hairlines. */
+.data-table caption {
+  padding-bottom: var(--space-3);
+  text-align: left;
+  font-weight: var(--font-weight-bold);
+}
+
+.data-table th {
+  padding: var(--space-2) var(--space-4);
+  text-align: left;
+  vertical-align: bottom;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border-bottom: 2px solid var(--color-rule);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: var(--space-2) var(--space-4);
+  height: 40px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.data-table tbody th {
+  background: transparent;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  vertical-align: middle;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table.compact th,
+.data-table.compact td {
+  height: auto;
+  padding: var(--space-1) var(--space-3);
+}
+
+.data-table .numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table .center {
+  text-align: center;
+}
+
+.data-table .actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-hover);
+}
+
+.data-table tbody tr:last-child > * {
+  border-bottom: none;
+}
+
+.data-table tfoot td,
+.data-table tfoot th {
+  border-top: 1px solid var(--color-rule);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  background: transparent;
+}
+
+/* Grade / status cells (Bavarian grades — mapping in STYLEGUIDE.md):
+   good ≤ 2,5 · medium 2,6–4,0 · poor > 4,0. Same in both brands.
+   The number is always shown; color only reinforces. The tint is a
+   marker set inside the cell (inset from the row lines), so the
+   column reads as a scale, not as a striped spreadsheet. */
+.data-table .cell-success,
+.data-table .cell-warning,
+.data-table .cell-error,
+.data-table .cell-info {
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  background-clip: content-box;
+  padding: 5px var(--space-3);
+}
+
+.data-table .cell-success { background-color: var(--color-success-bg-strong); color: var(--color-success-deep); }
+.data-table .cell-warning { background-color: var(--color-warning-bg); color: var(--color-warning-text); }
+.data-table .cell-error   { background-color: var(--color-error-bg-strong); color: var(--color-error-text); }
+.data-table .cell-info    { background-color: var(--color-info-bg); color: var(--color-info-text); }
+
+/* Key-value list: <dl class="kv"><dt>Klasse</dt><dd>B3IT10a</dd>…</dl> */
+.kv {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-2) var(--space-6);
+}
+
+.kv dt {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  padding-top: 1px;
+}
+
+.kv dd {
+  overflow-wrap: anywhere;
+}
+
+/* ================================================================
+   14. CHARTS — CSS/SVG building blocks
+   Rules (STYLEGUIDE.md § Charts): series colors --chart-1…6 in
+   order via .series-N; status hues only when a series MEANS good/
+   bad; direct labels on marks; square bars ≤ 24px thick standing
+   on an ink baseline; hairline grid; a table view for every chart.
+   ================================================================ */
+.series-1 { --series: var(--chart-1); }
+.series-2 { --series: var(--chart-2); }
+.series-3 { --series: var(--chart-3); }
+.series-4 { --series: var(--chart-4); }
+.series-5 { --series: var(--chart-5); }
+.series-6 { --series: var(--chart-6); }
+
+.chart-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+}
+
+.chart-subtitle {
+  margin-top: 2px;
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Column chart. Height includes value + axis labels (no clipping). */
+.bar-chart {
+  display: flex;
+  align-items: stretch;
+  gap: 0;                        /* keeps the baseline one continuous line */
+  height: 240px;
+  padding-top: var(--space-2);
+}
+
+.bar-chart-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.bar-track {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-top: 1.6em;            /* room for the value above a 100 % bar */
+  border-bottom: 1px solid var(--chart-axis);
+}
+
+.bar {
+  position: relative;
+  width: 100%;
+  max-width: 24px;
+  min-height: 2px;
+  background: var(--series, var(--chart-1));
+}
+
+.bar > .bar-value {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding-bottom: var(--space-1);
+}
+
+.bar-value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bar-label {
+  max-width: 100%;
+  font-size: var(--font-size-sm);
+  color: var(--chart-label);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Horizontal bars — best for long German category names, rankings
+   and per-student values. <div class="hbar-chart" role="list"> … */
+.hbar-chart {
+  display: grid;
+  grid-template-columns: fit-content(40%) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.hbar-row {
+  display: contents;
+}
+
+.hbar-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hbar-track {
+  display: flex;
+  align-items: center;
+  height: 24px;
+  border-left: 1px solid var(--chart-axis);
+}
+
+.hbar-fill {
+  height: 14px;
+  min-width: 2px;
+  background: var(--series, var(--chart-1));
+}
+
+.hbar-value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Donut (SVG, r = 15.915 so the circumference is 100):
+   each .donut-segment gets stroke-dasharray="<pct − 1> <101 − pct>"
+   and stroke-dashoffset="−<sum of previous pcts>". ≤ 6 segments. */
+.donut-chart {
+  position: relative;
+  width: 168px;
+  height: 168px;
+  flex-shrink: 0;
+}
+
+.donut-chart svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.donut-ring,
+.donut-segment {
+  fill: none;
+  stroke-width: 4.5;
+}
+
+.donut-ring {
+  stroke: var(--color-hover);
+}
+
+.donut-segment {
+  stroke: var(--series, var(--chart-1));
+}
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.donut-value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: proportional-nums;
+  line-height: 1.1;
+}
+
+.donut-caption {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* SVG line/area chart parts: <svg class="chart-svg" viewBox="…"> */
+.chart-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: var(--font-family);
+}
+
+.chart-svg .grid line {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+.chart-svg .axis text {
+  fill: var(--chart-label);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-svg .line {
+  fill: none;
+  stroke: var(--series, var(--chart-1));
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-svg .area {
+  fill: var(--series, var(--chart-1));
+  opacity: 0.1;
+}
+
+.chart-svg .dot {
+  fill: var(--series, var(--chart-1));
+  stroke: var(--color-surface);
+  stroke-width: 2;
+}
+
+.chart-svg .value-label {
+  fill: var(--color-text);
+  font-size: 13px;
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Legend — always for ≥ 2 series; none for a single series */
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  margin-top: var(--space-4);
+  list-style: none;
+}
+
+.chart-legend.vertical {
+  flex-direction: column;
+  margin-top: 0;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 0;
+  flex-shrink: 0;
+  background: var(--series, var(--chart-1));
+}
+
+.legend-value {
+  margin-left: auto;
+  padding-left: var(--space-3);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Table view for every chart:
+   <details class="chart-data"><summary>Daten als Tabelle</summary><table class="data-table compact">…</table></details> */
+.chart-data {
+  margin-top: var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.chart-data summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.chart-data summary:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.chart-data[open] summary {
+  margin-bottom: var(--space-3);
+}
+
+/* Progress bar (a meter): track = lighter step of the fill's ramp.
+   role="progressbar" + aria-valuenow/min/max + a visible % label.
+   Default fill = brand. Status fills ONLY when the value means
+   good/bad (storage full, deadline) — never for learner progress. */
+.progress {
+  width: 100%;
+  height: 6px;
+  background: var(--color-primary-100);
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: var(--color-primary-600);
+  transition: width var(--transition-slow);
+}
+
+.progress:has(> .progress-bar.success) { background: var(--color-success-bg); }
+.progress:has(> .progress-bar.warning) { background: var(--color-warning-bg); }
+.progress:has(> .progress-bar.error)   { background: var(--color-error-bg); }
+
+.progress-bar.success { background: var(--color-success-icon); }
+.progress-bar.warning { background: var(--color-warning-icon); }
+.progress-bar.error   { background: var(--color-error-icon); }
+
+.progress-label {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.progress-label > :last-child {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Progress tiles — discrete steps (exam tasks, quiz position).
+   Container: role="img" aria-label="Aufgabe 3 von 8".
+   done = filled · current = tinted + ring + marker · open = outline */
+.progress-tiles {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+  padding-top: 12px; /* room for the current-tile marker */
+}
+
+.progress-tiles .tile {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 12px;
+  max-width: 48px;
+  height: 10px;
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+}
+
+.progress-tiles .tile.done {
+  background: var(--color-primary-600);
+  box-shadow: none;
+}
+
+.progress-tiles .tile.current {
+  background: var(--color-primary-100);
+  box-shadow: inset 0 0 0 2px var(--color-primary-600);
+}
+
+.progress-tiles .tile.current::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 3px);
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid var(--color-primary-600);
+}
+
+/* ================================================================
+   15. TEXT CONTENT — prose & code
+   ================================================================ */
+
+/* Learning content: readable measure, generous line height. */
+.prose {
+  max-width: 70ch;
+  line-height: var(--line-height-relaxed);
+}
+
+.prose > * + * {
+  margin-top: var(--space-4);
+}
+
+/* :where() keeps these weak, so components inside .prose
+   (breadcrumb, action steps) keep their own list styling */
+.prose :where(ul, ol) {
+  padding-left: var(--space-8);
+}
+
+.prose :where(li + li) {
+  margin-top: var(--space-1);
+}
+
+.prose h2 { font-size: var(--font-size-xl); margin-top: var(--space-8); }
+.prose h3 { font-size: var(--font-size-lg); margin-top: var(--space-6); }
+.prose h4 { font-size: var(--font-size-base); margin-top: var(--space-6); }
+
+.prose h2 + *,
+.prose h3 + *,
+.prose h4 + * {
+  margin-top: var(--space-3);
+}
+
+/* Headings that open a box (situation, steps) keep the box's spacing */
+.prose :is(h2, h3, h4):first-child {
+  margin-top: 0;
+}
+
+.prose blockquote {
+  padding-left: var(--space-5);
+  border-left: 1px solid var(--color-border-strong);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.prose img,
+.prose video {
+  border-radius: var(--radius-sm);
+}
+
+.prose figcaption {
+  margin-top: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Inline code — IT-school essential */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--color-hover);
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-1);
+  overflow-wrap: anywhere;
+}
+
+/* Code block: <pre class="code-block"><code>…</code></pre>.
+   Dark terminal surface by default; .light for worksheet style.
+   Optional hand highlighting: <span class="tok-kw|tok-str|tok-com|tok-num|tok-fn"> */
+.code-block {
+  --c-bg: var(--code-bg);
+  --c-text: var(--code-text);
+  --c-com: var(--code-comment);
+  --c-kw: var(--code-keyword);
+  --c-str: var(--code-string);
+  --c-num: var(--code-number);
+  --c-fn: var(--code-function);
+  --c-border: var(--code-border);
+  background: var(--c-bg);
+  color: var(--c-text);
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
+  overflow-x: auto;
+  margin-bottom: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  line-height: 1.65;
+  tab-size: 4;
+}
+
+.code-block.light,
+.code-figure.light .code-block {
+  --c-bg: var(--code-light-bg);
+  --c-text: var(--code-light-text);
+  --c-com: var(--code-light-comment);
+  --c-kw: var(--code-light-keyword);
+  --c-str: var(--code-light-string);
+  --c-num: var(--code-light-number);
+  --c-fn: var(--code-light-function);
+  --c-border: var(--code-light-border);
+  border: 1px solid var(--c-border);
+}
+
+.code-block code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+  overflow-wrap: normal;
+}
+
+.tok-com { color: var(--c-com); font-style: italic; }
+.tok-kw  { color: var(--c-kw); }
+.tok-str { color: var(--c-str); }
+.tok-num { color: var(--c-num); }
+.tok-fn  { color: var(--c-fn); }
+
+/* Code with a header (file name / language + copy button) */
+.code-figure {
+  margin-bottom: var(--space-4);
+}
+
+.code-figure .code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-2) var(--space-1) var(--space-5);
+  background: var(--code-bg);
+  border-bottom: 1px solid var(--code-border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  color: var(--code-comment);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.code-figure.light .code-header {
+  background: var(--code-light-bg);
+  border: 1px solid var(--code-light-border);
+  border-bottom-color: var(--code-light-border);
+  color: var(--code-light-comment);
+}
+
+.code-figure .code-block {
+  margin: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.code-figure.light .code-block {
+  border-top: 0;
+}
+
+.code-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 26px;
+  padding: 2px var(--space-3);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}
+
+.code-copy:hover {
+  color: var(--code-text);
+}
+
+.code-figure.light .code-copy:hover {
+  color: var(--code-light-text);
+}
+
+kbd {
+  font-family: var(--font-mono);
+  font-size: 0.8125em;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+  padding: 1px var(--space-2);
+  white-space: nowrap;
+}
+
+/* Copy field — monospace value + copy button + confirmation
+   (role="status"). Commands, IPs, passwords, git URLs. */
+.copy-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+  background: var(--color-hover);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.copy-field code {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: var(--font-size-base);
+  user-select: all;
+  overflow-x: auto;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.copy-feedback {
+  font-size: var(--font-size-sm);
+  color: var(--color-success-text);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.copy-feedback:empty {
+  display: none;
+}
+
+/* ================================================================
+   16. EXAM & TIMER
+   ================================================================ */
+/* Facts strip above the countdown: the ink rule, then figures
+   separated by hairlines — no box. */
+.timer-bar {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-top: 2px solid var(--color-rule);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--space-5);
+}
+
+.timer-item {
+  flex: 1;
+  text-align: center;
+}
+
+.timer-item + .timer-item {
+  border-left: 1px solid var(--color-border);
+}
+
+.timer-item-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.timer-item-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Large countdown. Digits are neutral; only warning/critical color
+   them. Calm: a status bar under the digits + digit color change,
+   no blinking, no motion. Ticking digits use tabular-nums so the
+   width never jitters. No frame: the number is the page. */
+.timer-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-5) var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.timer-display-value {
+  font-size: var(--font-size-timer);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+
+.timer-display-label {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  min-width: 8em;
+  border-top: 4px solid var(--color-border);
+  text-align: center;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-muted);
+}
+
+.timer-display.warning .timer-display-label { border-top-color: var(--color-warning-icon); }
+.timer-display.warning .timer-display-value { color: var(--color-warning-text); }
+.timer-display.critical .timer-display-label { border-top-color: var(--color-error-icon); }
+.timer-display.critical .timer-display-value { color: var(--color-error-text); }
+
+.timer-controls {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+/* Task list — checklist rows */
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.task-item:hover {
+  background: var(--color-hover);
+}
+
+.task-checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.task-text {
+  flex: 1;
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+}
+
+.task-item:has(.task-checkbox:checked) .task-text,
+.task-item.completed .task-text {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+}
+
+.task-input-bar {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-hover);
+  border-radius: var(--radius);
+  align-items: center;
+}
+
+.task-input-bar .form-input {
+  flex: 1;
+}
+
+.task-input-bar .btn {
+  flex-shrink: 0;
+}
+
+/* Empty state — always state + next action */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-5);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.empty-state svg {
+  width: 32px;
+  height: 32px;
+  margin-bottom: var(--space-1);
+  color: var(--color-text-muted);
+}
+
+.empty-state p {
+  max-width: 40ch;
+}
+
+.empty-state p:first-of-type {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.empty-state .btn {
+  margin-top: var(--space-3);
+}
+
+/* ================================================================
+   17. LEARNING COMPONENTS (Lernsituation sequence)
+   mandatory-badge → situation-box → action-steps → resources →
+   completion-link. Inside Mebis use mebis/b3-mebis.css instead.
+   ================================================================ */
+.learning-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-3);
+}
+
+.learning-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.learning-header h3 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.learning-status {
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+.learning-status.complete { background: var(--color-success-bg); color: var(--color-success-deep); }
+.learning-status.pending  { background: var(--color-warning-bg); color: var(--color-warning-text); }
+.learning-status.locked   { background: var(--color-hover);      color: var(--color-text-muted); }
+
+/* Metadata row: complexity, time, relevance */
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-5);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.meta-item svg {
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-muted);
+}
+
+/* Star complexity — role="img" aria-label="Komplexität: 3 von 5".
+   Accent orange: ≥ 3:1 (the v4 status orange was 2.5:1). */
+.complexity {
+  color: var(--color-accent);
+  font-size: var(--font-size-base);
+  letter-spacing: 2px;
+}
+
+/* Mandatory task notice (Pflichtaufgabe). Inline-block, so the text
+   and its link wrap as one sentence on narrow screens. */
+.mandatory-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-icon);
+  border-radius: var(--radius);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-warning-text);
+  margin-bottom: var(--space-4);
+}
+
+.mandatory-badge svg {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  margin-right: var(--space-2);
+  vertical-align: -0.2em;
+}
+
+.mandatory-badge a {
+  color: inherit;
+  font-weight: var(--font-weight-semibold);
+}
+
+/* Situation box — the scenario of a Lernsituation. Drawn like the
+   box on a printed worksheet: a ruled frame with its label set into
+   the top edge (fieldset/legend). The h4 sits on the line. */
+.situation-box {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  padding: var(--space-5) var(--space-5) var(--space-4);
+  margin: calc(var(--space-3) + 2px) 0 var(--space-5);
+}
+
+/* :first-child lifts this above `.prose :is(h2, h3, h4):first-child` */
+.situation-box h4:first-child {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  margin: calc(-1 * var(--space-5) - 0.6em) 0 var(--space-2) calc(-1 * var(--space-2));
+  padding: 0 var(--space-2);
+  background: var(--color-surface);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+.situation-box p {
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-2);
+}
+
+.situation-box p:last-child {
+  margin-bottom: 0;
+}
+
+.situation-box blockquote {
+  margin: var(--space-3) 0;
+  padding-left: var(--space-5);
+  border-left: 1px solid var(--color-border-strong);
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+/* Action steps — numbered Handlungsschritte. Open list under a
+   heading; numbers hang in the margin as bold figures, divided by
+   hairlines like the rows of a worksheet. */
+.action-steps {
+  margin-bottom: var(--space-5);
+}
+
+.action-steps h4 {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--color-rule);
+}
+
+.action-steps ol {
+  list-style: none;
+  counter-reset: step-counter;
+  padding-left: 0;
+}
+
+.action-steps ol li {
+  counter-increment: step-counter;
+  position: relative;
+  margin-top: 0;
+  padding: var(--space-2) 0 var(--space-2) 28px;
+  border-bottom: 1px solid var(--color-border);
+  line-height: var(--line-height-relaxed);
+}
+
+.action-steps ol li::before {
+  content: counter(step-counter);
+  position: absolute;
+  left: 0;
+  top: var(--space-2);
+  width: 16px;
+  text-align: right;
+  color: var(--color-primary-600);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Resource links — type shown by icon AND text */
+/* Resource links: a link with a type label, not a button-chip.
+   The icon is a neutral glyph; the type word ("PDF", "6 min")
+   carries the meaning. Status hues stay reserved for status. */
+.resource {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.resource:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-hover);
+  color: var(--color-text);
+}
+
+.resource svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.resource-type {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+}
+
+/* Type hooks .pdf .video .checklist .link stay valid markup; since
+   v6 they no longer tint the icon (status hues mean status). */
+.resource:is(.pdf, .video, .checklist, .link) svg {
+  color: var(--color-text-muted);
+}
+
+/* Completion link (Mebis "Zu erledigen") */
+.completion-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-primary-600);
+  font-weight: var(--font-weight-medium);
+}
+
+.completion-link:hover {
+  color: var(--color-primary-700);
+}
+
+/* Collapsible — native <details class="collapsible"> */
+details.collapsible {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-3);
+}
+
+details.collapsible summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+  list-style: none;
+  transition: background var(--transition-fast);
+}
+
+details.collapsible summary::-webkit-details-marker,
+details.collapsible summary::marker {
+  display: none;
+  content: '';
+}
+
+details.collapsible summary:hover {
+  background: var(--color-hover);
+}
+
+details.collapsible summary svg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  transition: transform var(--transition-base);
+}
+
+details.collapsible[open] summary {
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+details.collapsible[open] summary svg {
+  transform: rotate(180deg);
+}
+
+details.collapsible .collapsible-inner {
+  padding: var(--space-2) var(--space-5) var(--space-5);
+}
+
+/* Course progress icons — pair with .visually-hidden status text.
+   Learner progress is brand, never traffic-light: done = filled,
+   current = ring, open = hairline ring. */
+.progress-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.progress-icon.complete    { background: var(--color-primary-600); color: var(--color-on-primary); }
+.progress-icon.in-progress { color: transparent; box-shadow: inset 0 0 0 2px var(--color-primary-600), inset 0 0 0 5px var(--color-surface), inset 0 0 0 9px var(--color-primary-600); }
+.progress-icon.not-started { color: transparent; box-shadow: inset 0 0 0 1px var(--color-border-strong); }
+
+/* Course navigation */
+.course-nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.course-nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-6);
+  min-height: 38px;
+  color: var(--color-text);
+  text-decoration: none;
+  transition: background var(--transition-fast);
+}
+
+.course-nav-item:hover {
+  background: var(--color-hover);
+  color: var(--color-text);
+}
+
+.course-nav-item.active,
+.course-nav-item[aria-current="page"] {
+  color: var(--color-text);
+  font-weight: var(--font-weight-bold);
+  box-shadow: inset 3px 0 0 var(--color-primary-600);
+}
+
+/* Person cards */
+.person-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.person-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-hover);
+  color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+.person-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.person-name {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.person-role {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* ================================================================
+   18. EXERCISES — segmented control, quiz
+   ================================================================ */
+
+/* Segmented control — mutually exclusive mode switch (2–4 options).
+   <div class="segmented" role="group" aria-label="…">
+     <button type="button" aria-pressed="true">A</button> … </div>
+   For form data prefer .radio-option rows. */
+.segmented {
+  display: inline-flex;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+.segmented button {
+  min-height: 30px;
+  padding: var(--space-1) var(--space-4);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--color-border-strong);
+}
+
+.segmented button:hover {
+  background: var(--color-hover);
+}
+
+.segmented button:focus-visible {
+  outline-offset: -3px;
+}
+
+/* Selected segment: ink fill, like a selected filter */
+.segmented button[aria-pressed="true"],
+.segmented button.active {
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+/* Quiz. JS sets .selected/.correct/.incorrect AFTER evaluation and
+   disables the options. Each state shows a mark, not color alone. */
+.quiz-question {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  margin-bottom: var(--space-4);
+}
+
+.quiz-options {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.quiz-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.quiz-option:hover:not(:disabled) {
+  border-color: var(--color-text);
+  background: var(--color-hover);
+}
+
+.quiz-option.selected {
+  border-color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--color-text);
+}
+
+.quiz-option.correct {
+  border-color: var(--color-success-icon);
+  background: var(--color-success-bg);
+  color: var(--color-success-deep);
+  box-shadow: inset 0 0 0 1px var(--color-success-icon);
+}
+
+.quiz-option.incorrect {
+  border-color: var(--color-error-icon);
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+  box-shadow: inset 0 0 0 1px var(--color-error-icon);
+}
+
+.quiz-option.correct::after,
+.quiz-option.incorrect::after {
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+.quiz-option.correct::after   { content: '✓'; }
+.quiz-option.incorrect::after { content: '✗'; }
+
+.quiz-option:disabled {
+  cursor: default;
+}
+
+.quiz-option:disabled:not(.correct):not(.incorrect) {
+  color: var(--color-text-muted);
+}
+
+.quiz-feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  font-size: var(--font-size-base);
+}
+
+.quiz-feedback strong {
+  font-weight: var(--font-weight-bold);
+}
+
+.quiz-feedback.correct   { background: var(--color-success-bg); color: var(--color-success-deep); }
+.quiz-feedback.incorrect { background: var(--color-error-bg);   color: var(--color-error-text); }
+
+/* ================================================================
+   19. DISPLAY MODE (projector / exam dashboard)
+   Everything is rem-based, so scaling the root scales all of it.
+   <html class="display-mode">; optional photo background on <body>
+   with .overlay + .card.glass.
+   ================================================================ */
+html.display-mode {
+  font-size: 175%; /* 200% for large rooms */
+  --header-height: 3.5rem;
+}
+
+/* A projector layout on a phone is just too big: fall back to normal size */
+@media (max-width: 768px) {
+  html.display-mode {
+    font-size: 100%;
+  }
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.card.glass {
+  background: color-mix(in srgb, var(--color-surface) 93%, transparent);
+  backdrop-filter: blur(10px);
+  border-color: color-mix(in srgb, var(--color-surface) 30%, transparent);
+  position: relative;
+  z-index: 2;
+}
+
+/* ================================================================
+   20. RESPONSIVE
+   ================================================================ */
+@media (max-width: 1024px) {
+  .grid.cols-3,
+  .grid.cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .main-content {
+    padding: var(--space-5);
+  }
+}
+
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  /* Sidebar becomes a horizontally scrolling nav strip */
+  .sidebar {
+    position: static;
+    width: 100%;
+    max-height: none;
+    padding: 0 var(--space-2);
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .sidebar-nav ul {
+    display: flex;
+    gap: var(--space-1);
+  }
+
+  .sidebar-nav li {
+    margin: 0;
+  }
+
+  .sidebar-nav a,
+  .course-nav-item {
+    white-space: nowrap;
+    padding: var(--space-1) var(--space-3);
+    min-height: 34px;
+  }
+
+  .sidebar-nav a[aria-current="page"],
+  .course-nav-item[aria-current="page"] {
+    box-shadow: inset 0 -3px 0 var(--color-primary-600);
+  }
+
+  .course-nav {
+    flex-direction: row;
+  }
+
+  .nav-label {
+    display: none;
+  }
+
+  .main-content {
+    padding: var(--space-4);
+  }
+
+  .app-header {
+    padding: 0 var(--space-4);
+  }
+
+  .app-subtitle {
+    display: none;
+  }
+
+  .app-brand {
+    gap: var(--space-3);
+  }
+
+  .app-brand-text {
+    padding-left: var(--space-3);
+  }
+
+  .grid.cols-2,
+  .grid.cols-3,
+  .grid.cols-4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .grid .span-2 {
+    grid-column: auto;
+  }
+
+  :root {
+    --font-size-timer: 4.5rem;
+    --font-size-hero: 2.5rem;
+    --font-size-2xl: 1.5rem;
+  }
+
+  .timer-bar {
+    flex-direction: column;
+  }
+
+  .timer-item + .timer-item {
+    border-left: 0;
+    border-top: 1px solid var(--color-border);
+    padding-top: var(--space-3);
+  }
+
+  .bar-chart {
+    height: 200px;
+  }
+}
+
+@media (max-width: 640px) {
+  .timer-controls,
+  .task-input-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .timer-controls .btn,
+  .task-input-bar .btn,
+  .form-actions .btn {
+    width: 100%;
+  }
+
+  dialog.modal {
+    padding: var(--space-5);
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+
+  .toast-region,
+  body > .toast {
+    left: var(--space-4);
+    right: var(--space-4);
+    bottom: var(--space-4);
+    max-width: none;
+    align-items: stretch;
+  }
+
+  .kv {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .kv dd {
+    margin-bottom: var(--space-3);
+  }
+
+  .header-actions .header-user {
+    display: none;
+  }
+}
+
+/* ================================================================
+   21. USER PREFERENCES — more contrast, forced colors
+   ================================================================ */
+@media (prefers-contrast: more) {
+  :root {
+    --color-text-muted: var(--color-text);
+    --color-border: var(--color-border-strong);
+    --chart-grid: var(--color-border-strong);
+  }
+}
+
+/* Windows high contrast: backgrounds are replaced by system colors,
+   so every state that relied on a fill gets a system-color outline. */
+@media (forced-colors: active) {
+  .pill[aria-pressed="true"],
+  .segmented button[aria-pressed="true"],
+  .quiz-option.selected,
+  .quiz-option.correct,
+  .quiz-option.incorrect,
+  .radio-option:has(input:checked),
+  .checkbox-option:has(input:checked),
+  .sidebar-nav a[aria-current="page"],
+  .course-nav-item[aria-current="page"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  .tab[aria-selected="true"] {
+    border-bottom-color: Highlight;
+  }
+
+  /* Ring/dot icons are drawn with box-shadow, which forced colors drop */
+  .progress-icon {
+    border: 1px solid CanvasText;
+  }
+
+  .progress-icon.in-progress {
+    color: CanvasText;
+  }
+
+  .bar,
+  .hbar-fill,
+  .legend-color,
+  .progress-bar,
+  .progress-tiles .tile.done {
+    forced-color-adjust: none;
+    background: CanvasText;
+    color: Canvas;
+  }
+
+  .progress,
+  .progress-tiles .tile {
+    border: 1px solid CanvasText;
+  }
+
+  .donut-segment {
+    stroke: CanvasText;
+  }
+
+  .switch input {
+    border: 1px solid CanvasText;
+  }
+
+  .switch input:checked {
+    background: Highlight;
+  }
+
+  .switch input::before {
+    background: CanvasText;
+  }
+
+  /* Pictograms keep their drawing; the hues become text color */
+  .pictogram {
+    forced-color-adjust: none;
+    color: CanvasText;
+  }
+
+  .pictogram [class] {
+    color: CanvasText;
+  }
+
+  .pictogram .paper,
+  .pictogram .wash {
+    fill: Canvas;
+  }
+
+  .pictogram .tint {
+    fill: none;
+  }
+}
+
+/* ================================================================
+   22. PRINT (grade lists, worksheets). Dark tokens are screen-only,
+   so print always uses the light palette.
+   ================================================================ */
+@media print {
+  .app-header,
+  .sidebar,
+  .app-footer,
+  .btn,
+  .toast-region,
+  .toast,
+  .menu,
+  .skip-link,
+  .task-input-bar,
+  .chart-data summary {
+    display: none !important;
+  }
+
+  body {
+    background: none;
+  }
+
+  .main-content {
+    padding: 0;
+  }
+
+  .card,
+  .learning-card {
+    border: 1px solid var(--color-border-strong);
+    break-inside: avoid;
+  }
+
+  .metric {
+    break-inside: avoid;
+  }
+
+  .data-table tr {
+    break-inside: avoid;
+  }
+
+  .prose a[href^="http"]::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+    color: var(--color-text-muted);
+  }
+
+  .code-block {
+    white-space: pre-wrap;
+  }
+}
+
+/* ================================================================
+   23. UTILITIES (low level — prefer the layout primitives in § 6)
+   ================================================================ */
+.text-center  { text-align: center; }
+.text-right   { text-align: right; }
+.text-muted   { color: var(--color-text-muted); }
+.text-primary { color: var(--color-primary-600); }
+.text-success { color: var(--color-success-text); }
+.text-error   { color: var(--color-error-text); }
+.text-warning { color: var(--color-warning-text); }
+.text-sm      { font-size: var(--font-size-sm); }
+.text-xs      { font-size: var(--font-size-xs); }
+.tabular      { font-variant-numeric: tabular-nums; }
+.truncate     { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: var(--space-1); }
+.mb-2 { margin-bottom: var(--space-2); }
+.mb-3 { margin-bottom: var(--space-3); }
+.mb-4 { margin-bottom: var(--space-4); }
+.mb-5 { margin-bottom: var(--space-5); }
+.mb-6 { margin-bottom: var(--space-6); }
+.mb-8 { margin-bottom: var(--space-8); }
+
+.mt-1 { margin-top: var(--space-1); }
+.mt-2 { margin-top: var(--space-2); }
+.mt-3 { margin-top: var(--space-3); }
+.mt-4 { margin-top: var(--space-4); }
+.mt-5 { margin-top: var(--space-5); }
+.mt-6 { margin-top: var(--space-6); }
+.mt-8 { margin-top: var(--space-8); }
+
+.flex            { display: flex; }
+.flex-col        { flex-direction: column; }
+.flex-wrap       { flex-wrap: wrap; }
+.items-center    { align-items: center; }
+.justify-center  { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.gap-6 { gap: var(--space-6); }
+
+.w-full { width: 100%; }
+.hidden { display: none; }
+
+/* ================================================================
+   24. v4 COMPATIBILITY — kept so v4 apps keep rendering.
+   Don't use in new code.
+   ================================================================ */
+
+/* v4 header actions container → .header-actions */
+.app-header .user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* v4 bar markup without .bar-track: value, bar, label as siblings */
+.bar-chart-item > .bar {
+  margin-top: auto;
+}
+
+/* v4 CSS donut → use the SVG .donut-chart */
+.pie-chart {
+  width: 168px;
+  height: 168px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--chart-1) 0deg 120deg,
+    var(--chart-2) 120deg 240deg,
+    var(--chart-3) 240deg 360deg
+  );
+  position: relative;
+}
+
+.pie-chart.donut::before {
+  content: '';
+  position: absolute;
+  inset: 20%;
+  background: var(--color-surface);
+  border-radius: 50%;
+}
+
+/* === END OF STYLESHEET === */

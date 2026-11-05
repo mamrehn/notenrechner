@@ -1,64 +1,301 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notenskala</title>
-    <!-- Bootstrap CSS CDN -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <style>
-        /* Custom styles for the result and usage boxes to ensure consistent appearance */
-        #result, #usage-box {
-            border-radius: 0.5rem; /* Bootstrap's default for alerts */
-        }
-        /* Ensure the result box has enough padding and rounded corners */
-        #result {
-            font-size: 150%; /* As per original request */
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="IHK-Notenschlüssel für jede Höchstpunktzahl: Notengrenzen in halben oder ganzen Punkten, Note und IHK-Dezimalnote zu jeder Punktzahl, Notenspiegel einer Klasse.">
+  <title>Notenrechner – IHK-Notenschlüssel</title>
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('b3-theme')||'light'}catch(e){}</script>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="fonts/fonts.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="app.css">
+  <script src="grading.js" defer></script>
+  <script src="b3.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
-    <div class="container">
-        <h1 class="mt-4">Notenskala</h1>
+  <a class="skip-link" href="#main">Zum Inhalt springen</a>
 
-        <!-- Result Display Box -->
-        <div id="result" class="alert mt-4" style="display: none;"></div>
-
-        <!-- Grading Scale Table -->
-        <table class="table table-bordered mt-4">
-            <thead>
-                <tr>
-                    <th class="col-mt-2">Punktebereich</th>
-                    <th class="col-mt-2">Note</th>
-                </tr>
-            </thead>
-            <tbody id="grading-scale">
-                <!-- Dynamische Inhalte werden hier eingefügt -->
-            </tbody>
-        </table>
-
-        <!-- Usage Box -->
-        <div id="usage-box" class="alert alert-warning mt-4" style="display: none;">
-            <h2 class="h4">Nutzungshinweise:</h2>
-            <p>Sie können die Notenskala anpassen und eine bestimmte Punktzahl hervorheben, indem Sie Parameter zur URL hinzufügen.</p>
-            <p class="mb-1"><strong>Parameter:</strong></p>
-            <ul class="list-unstyled ml-4">
-                <li><code>?max={maximale_punktzahl}</code>: Legt die maximale Punktzahl für die Prüfung/Aufgabe fest. Standard ist 100.</li>
-                <li><code>?p={ihre_erreichten_punkte}</code>: Hebt die Zeile hervor, die Ihren erreichten Punkten entspricht, und zeigt Ihre Note an.</li>
-            </ul>
-            <p class="mt-2"><strong>Beispiele:</strong></p>
-            <ul class="list-unstyled ml-4">
-                <li><a href="#" id="example-1" class="text-primary hover:underline"></a> (11 Punkte von 13)</li>
-                <li><a href="#" id="example-2" class="text-primary hover:underline"></a> (85 Punkte von 100)</li>
-            </ul>
-        </div>
+  <header class="app-header">
+    <a class="app-brand" href="./">
+      <span class="app-brand-text">
+        <span class="app-title">Notenrechner</span>
+        <span class="app-subtitle">IHK-Notenschlüssel</span>
+      </span>
+    </a>
+    <div class="header-actions">
+      <button class="btn ghost icon-only" type="button" data-b3-theme-toggle aria-label="Dunkles Design">
+        <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37 5.51c-.18.64-.27 1.31-.27 1.99 0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27C17.45 17.19 14.93 19 12 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+      </button>
     </div>
+  </header>
 
-    <!-- JavaScript Libraries -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.13.7/underscore-min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/backbone.js/1.6.1/backbone-min.js"></script>
-    <script src="app.js"></script>
+  <div class="app-layout">
+    <main class="main-content" id="main">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Notenschlüssel für deine Prüfung</h1>
+          <p class="page-lede">Der 100-Punkte-Schlüssel der IHK, umgerechnet auf jede Höchstpunktzahl. Gib erreichte Punkte ein, um die Note nachzuschlagen.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn secondary" type="button" id="print">
+            <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
+            Drucken
+          </button>
+          <button class="btn primary" type="button" id="copy-link">
+            <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
+            Link kopieren
+          </button>
+        </div>
+      </div>
 
+      <noscript>
+        <div class="alert warning" role="status">
+          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+          <div><span class="alert-title">JavaScript ist ausgeschaltet.</span> Der Notenrechner braucht JavaScript, um die Notengrenzen zu berechnen.</div>
+        </div>
+      </noscript>
+
+      <div class="grid cols-2 mb-8" data-print="hide">
+        <section class="card" aria-labelledby="exam-title">
+          <div class="card-header">
+            <h2 class="card-title" id="exam-title">Prüfung</h2>
+          </div>
+          <form id="settings" novalidate>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label required" for="max">Höchstpunktzahl</label>
+                <input class="form-input" id="max" name="max" type="text" inputmode="decimal" autocomplete="off" required value="100" aria-describedby="max-hint max-error">
+                <span class="form-hint" id="max-hint">Punkte für 100&nbsp;%</span>
+                <span class="form-error" id="max-error" hidden></span>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="bonus">Zusatzpunkte</label>
+                <input class="form-input" id="bonus" name="bonus" type="text" inputmode="decimal" autocomplete="off" aria-describedby="bonus-hint bonus-error">
+                <span class="form-hint" id="bonus-hint">Optional. Ändern keine Notengrenze.</span>
+                <span class="form-error" id="bonus-error" hidden></span>
+              </div>
+            </div>
+            <fieldset class="form-group mb-0">
+              <legend class="form-label">Punkteschritte</legend>
+              <div class="radio-group">
+                <label class="radio-option">
+                  <input type="radio" name="step" value="0.5" checked>
+                  <span>Halbe Punkte <span class="option-hint">Notengrenzen auf den nächsten halben Punkt aufgerundet</span></span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="step" value="1">
+                  <span>Ganze Punkte <span class="option-hint">Notengrenzen auf den nächsten ganzen Punkt aufgerundet</span></span>
+                </label>
+              </div>
+            </fieldset>
+          </form>
+        </section>
+
+        <section class="card" aria-labelledby="lookup-title">
+          <div class="card-header">
+            <h2 class="card-title" id="lookup-title">Note nachschlagen</h2>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="points">Erreichte Punkte</label>
+            <input class="form-input" id="points" name="p" type="text" inputmode="decimal" autocomplete="off" aria-describedby="points-hint points-error">
+            <span class="form-hint" id="points-hint">Markiert die passende Zeile im Notenschlüssel.</span>
+            <span class="form-error" id="points-error" hidden></span>
+          </div>
+          <p class="text-muted mb-0" id="result-empty">Die Note erscheint hier, sobald du Punkte eingibst.</p>
+          <div id="result" hidden>
+            <div class="metric-group mb-4">
+              <div class="metric hero">
+                <span class="metric-label">Note</span>
+                <span class="metric-value" id="r-grade"></span>
+                <span class="metric-trend"><span class="metric-context" id="r-word"></span></span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">Anteil</span>
+                <span class="metric-value" id="r-share"></span>
+                <span class="metric-trend"><span class="metric-context" id="r-points"></span></span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">IHK-Dezimalnote</span>
+                <span class="metric-value" id="r-decimal"></span>
+                <span class="metric-trend"><span class="metric-context" id="r-ihk"></span></span>
+              </div>
+            </div>
+            <p class="mb-0" id="r-next"></p>
+          </div>
+          <p class="visually-hidden" id="result-live" aria-live="polite"></p>
+        </section>
+      </div>
+
+      <section aria-labelledby="key-title">
+        <div class="section-header">
+          <h2 id="key-title">Notenschlüssel</h2>
+          <span class="text-muted" id="key-meta"></span>
+        </div>
+        <div class="card flush">
+          <div class="table-scroll">
+            <table class="data-table" id="key-table">
+              <caption class="visually-hidden" id="key-caption">Notenschlüssel</caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="center">Note</th>
+                  <th scope="col">Bezeichnung</th>
+                  <th scope="col" class="numeric">Punkte von</th>
+                  <th scope="col" class="numeric">bis</th>
+                  <th scope="col" class="numeric">IHK-Punkte</th>
+                </tr>
+              </thead>
+              <tbody id="key-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <details class="collapsible" id="all-scores">
+          <summary>
+            <span>Note für jede Punktzahl</span>
+            <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+          </summary>
+          <div class="collapsible-inner">
+            <div class="table-scroll sticky">
+              <table class="data-table compact">
+                <caption class="visually-hidden">Anteil, IHK-Punkte, Note und IHK-Dezimalnote für jede mögliche Punktzahl</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" class="numeric">Punkte</th>
+                    <th scope="col" class="numeric">Anteil</th>
+                    <th scope="col" class="numeric">IHK-Punkte</th>
+                    <th scope="col" class="center">Note</th>
+                    <th scope="col" class="numeric">Dezimalnote</th>
+                  </tr>
+                </thead>
+                <tbody id="scores-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+      </section>
+
+      <section aria-labelledby="class-title" id="class-section" data-print="hide">
+        <div class="section-header">
+          <h2 id="class-title">Klasse auswerten</h2>
+        </div>
+        <div class="grid cols-2">
+          <div class="form-group mb-0" data-print="hide">
+            <label class="form-label" for="list">Punkte der Klasse</label>
+            <textarea class="form-textarea" id="list" rows="10" spellcheck="false" autocomplete="off" aria-describedby="list-hint" placeholder="Anna 11,5&#10;Ben 9&#10;Cem 12"></textarea>
+            <span class="form-hint" id="list-hint">Eine Person pro Zeile, mit oder ohne Namen. Du kannst auch Spalten aus Excel einfügen. Die Liste bleibt in deinem Browser und wird nirgends gespeichert.</span>
+          </div>
+
+          <div>
+            <p class="text-muted" id="class-empty">Sobald du Punkte einfügst, erscheinen hier Durchschnitt und Notenspiegel.</p>
+            <div id="class-stats" hidden>
+              <div class="metric-group">
+                <div class="metric compact">
+                  <span class="metric-label">Teilnehmende</span>
+                  <span class="metric-value" id="c-count"></span>
+                </div>
+                <div class="metric compact">
+                  <span class="metric-label">Ø Note</span>
+                  <span class="metric-value" id="c-grade"></span>
+                </div>
+                <div class="metric compact">
+                  <span class="metric-label">Ø Anteil</span>
+                  <span class="metric-value" id="c-share"></span>
+                  <span class="metric-trend"><span class="metric-context" id="c-points"></span></span>
+                </div>
+                <div class="metric compact">
+                  <span class="metric-label">Note 4 oder besser</span>
+                  <span class="metric-value" id="c-passed"></span>
+                  <span class="metric-trend"><span class="metric-context" id="c-passed-of"></span></span>
+                </div>
+              </div>
+              <h3 class="chart-title">Notenspiegel</h3>
+              <p class="chart-subtitle" id="c-chart-subtitle"></p>
+              <div class="bar-chart" role="img" id="c-chart"></div>
+              <details class="chart-data">
+                <summary>Daten als Tabelle</summary>
+                <table class="data-table compact">
+                  <caption class="visually-hidden">Notenspiegel</caption>
+                  <thead><tr><th scope="col">Note</th><th scope="col" class="numeric">Anzahl</th><th scope="col" class="numeric">Anteil</th></tr></thead>
+                  <tbody id="c-chart-body"></tbody>
+                </table>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert warning mt-5" role="status" id="class-skipped" hidden>
+          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+          <div>
+            <span class="alert-title" id="class-skipped-title"></span>
+            <ul id="class-skipped-list"></ul>
+          </div>
+        </div>
+
+        <div class="card flush mt-5" id="class-results" hidden>
+          <div class="card-header">
+            <h3 class="card-title">Ergebnisse</h3>
+            <button class="btn secondary small" type="button" id="copy-list">
+              <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+              Liste kopieren
+            </button>
+          </div>
+          <div class="table-scroll sticky">
+            <table class="data-table" id="class-table">
+              <caption class="visually-hidden">Ergebnisse der Klasse</caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="numeric">Nr.</th>
+                  <th scope="col">Name</th>
+                  <th scope="col" class="numeric">Punkte</th>
+                  <th scope="col" class="numeric">Anteil</th>
+                  <th scope="col" class="center">Note</th>
+                  <th scope="col" class="numeric">Dezimalnote</th>
+                </tr>
+              </thead>
+              <tbody id="c-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="method-title" data-print="hide">
+        <div class="section-header">
+          <h2 id="method-title">So wird gerechnet</h2>
+        </div>
+        <div class="grid cols-2">
+          <div class="prose">
+            <p>Grundlage ist der Bewertungsschlüssel in § 24 der <a href="https://www.bibb.de/dokumente/pdf/HA120.pdf">Musterprüfungsordnung für Abschluss- und Umschulungsprüfungen</a> (Richtlinie des BIBB-Hauptausschusses vom 07.10.2025). Er gilt für alle IHK-Prüfungen und ist auf 100&nbsp;Punkte festgelegt.</p>
+            <p>Für eine andere Höchstpunktzahl braucht jede Note denselben Anteil: „sehr gut“ ab 92&nbsp;%, „gut“ ab 81&nbsp;%, „befriedigend“ ab 67&nbsp;%, „ausreichend“ ab 50&nbsp;% und „mangelhaft“ ab 30&nbsp;%.</p>
+            <p>Jede Grenze wird auf den nächsten halben oder ganzen Punkt <strong>aufgerundet</strong>. Beispiel mit 13&nbsp;Punkten: 92&nbsp;% sind 11,96&nbsp;Punkte, „sehr gut“ gibt es also ab 12&nbsp;Punkten. So bekommt niemand eine Note, deren Anteil nicht erreicht ist.</p>
+            <p>Zusatzpunkte verschieben keine Grenze, sie verlängern nur „sehr gut“ nach oben. Die IHK-Dezimalnote stammt aus derselben Tabelle in § 24. Dafür wird der Anteil auf ganze IHK-Punkte abgerundet.</p>
+          </div>
+          <div class="prose">
+            <h3>Link mit Werten teilen</h3>
+            <p>Die Adresse der Seite enthält immer die aktuellen Eingaben. Mit „Link kopieren“ teilst du den Notenschlüssel oder ein einzelnes Ergebnis.</p>
+            <dl class="kv">
+              <dt><code>max</code></dt><dd>Höchstpunktzahl, ohne Angabe 100</dd>
+              <dt><code>p</code></dt><dd>erreichte Punkte</dd>
+              <dt><code>step</code></dt><dd><code>1</code> für ganze Punkte, ohne Angabe halbe Punkte</dd>
+              <dt><code>bonus</code></dt><dd>Zusatzpunkte</dd>
+            </dl>
+            <p>Beispiele:</p>
+            <ul id="examples"></ul>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="app-footer">
+    <span>Kein offizielles Angebot einer IHK oder Schule. Alle Angaben ohne Gewähr.</span>
+    <nav aria-label="Projekt">
+      <ul>
+        <li><a href="https://github.com/mamrehn/notenrechner">Quellcode</a></li>
+        <li><a href="https://www.bibb.de/dokumente/pdf/HA120.pdf">Musterprüfungsordnung (BIBB)</a></li>
+      </ul>
+    </nav>
+  </footer>
 </body>
 </html>
