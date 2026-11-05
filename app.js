@@ -467,7 +467,8 @@
   /* Notenspiegel with tilted tops. Height = number of people; the top
      tilts by where they sit inside the grade's percent range: left side
      higher = closer to the better grade, right side higher = closer to
-     the worse grade, level = centred. */
+     the worse grade, level = centred. A dotted outline shows the regular
+     flat bar: its top, and its edge where the tilted top falls below it. */
   function leanText(b) {
     if (!b.count) return '–';
     const strength = Math.abs(b.lean);
@@ -488,6 +489,7 @@
     const round = (v) => Math.round(v * 10) / 10;
     const most = Math.max(...stats.distribution, 1);
     const bars = [];
+    const outlines = [];
     const labels = [];
     stats.lean.forEach((b, i) => {
       const cx = slot * i + slot / 2;
@@ -498,10 +500,17 @@
       const yLeft = base - h - d;
       const yRight = base - h + d;
       if (b.count) bars.push('<polygon class="lean-bar" points="' + [x0, base, x0, yLeft, x1, yRight, x1, base].map(round).join(' ') + '"/>');
+      if (b.count && Math.abs(d) >= 0.5) {
+        const yFlat = base - h;
+        const xLow = d > 0 ? x1 : x0;                       // the side whose corner sits below the flat top
+        const yLow = d > 0 ? yRight : yLeft;
+        outlines.push('<path class="flat-bar" d="M' + round(x0) + ' ' + round(yFlat) + 'H' + round(x1) +
+          'M' + round(xLow) + ' ' + round(yLow) + 'V' + round(yFlat) + '"/>');
+      }
       bars.push('<text class="value-label" x="' + cx + '" y="' + round(Math.min(yLeft, yRight, base) - 8) + '" text-anchor="middle">' + b.count + '</text>');
       labels.push('<text x="' + cx + '" y="' + (base + 24) + '" text-anchor="middle">' + b.grade + '</text>');
     });
-    return '<g class="series-1">' + bars.join('') + '</g>' +
+    return '<g class="series-1">' + bars.join('') + '</g>' + outlines.join('') +
       '<line class="baseline" x1="0" x2="' + width + '" y1="' + base + '" y2="' + base + '"/>' +
       '<g class="axis">' + labels.join('') + '</g>';
   }

@@ -107,6 +107,15 @@
   fill: var(--series, var(--chart-1));
 }
 
+/* The regular flat bar as a dotted outline: round ink dots */
+#c-chart .flat-bar {
+  fill: none;
+  stroke: var(--chart-axis);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 0 5;
+}
+
 #c-chart .baseline {
   stroke: var(--chart-axis);
   stroke-width: 1;
