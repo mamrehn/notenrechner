@@ -206,14 +206,37 @@
                   <button class="btn ghost small" type="button" id="calc-clear">Alle Punkte löschen</button>
                 </div>
               </div>
-              <div class="table-scroll">
+              <div class="split" id="calc-panel">
+                <div class="metric-group mb-0">
+                  <div class="metric">
+                    <span class="metric-label" id="cr-who">Summe Nr. 1</span>
+                    <span class="metric-value" id="cr-sum">–</span>
+                    <span class="metric-trend"><span class="metric-context" id="cr-state">noch keine Punkte</span></span>
+                  </div>
+                  <div class="metric">
+                    <span class="metric-label">Note</span>
+                    <span class="metric-value" id="cr-grade">–</span>
+                    <span class="metric-trend"><span class="metric-context" id="cr-word"></span></span>
+                  </div>
+                </div>
+                <div class="stack tight">
+                  <button class="btn secondary small" type="button" id="calc-next">Weiter bei Nr. 1</button>
+                </div>
+              </div>
+              <div class="cluster" id="calc-open"></div>
+              <p class="visually-hidden" id="calc-live" aria-live="polite"></p>
+              <div class="table-scroll sticky">
                 <table class="data-table compact" id="calc-table">
                   <caption class="visually-hidden">Punkte je Aufgabe und Person, mit Summe und Note</caption>
                   <thead id="calc-head"></thead>
                   <tbody id="calc-body"></tbody>
+                  <tfoot id="calc-foot"></tfoot>
                 </table>
               </div>
-              <p class="form-hint mb-0" id="calc-hint">Enter springt zur nächsten Aufgabe, ↑ und ↓ wechseln die Person. Ein leeres Feld fehlt noch: Trag 0 ein, wenn es keine Punkte gab. Nichts wird gespeichert.</p>
+              <div class="form-hint mb-0" id="calc-hint">
+                <p class="mb-1"><kbd>Enter</kbd>, <kbd>Leertaste</kbd> oder <kbd>+</kbd>: nächste Aufgabe, nach der letzten die nächste Person. <kbd>⇧</kbd>&nbsp;+&nbsp;<kbd>Enter</kbd> oder <kbd>Rücktaste</kbd> im leeren Feld: zurück. <kbd>↑</kbd> <kbd>↓</kbd>: andere Person. Eine Zeile oder ein Block aus Excel lässt sich direkt einfügen.</p>
+                <p class="mb-0">Ein leeres Feld fehlt noch, trag 0 ein, wenn es keine Punkte gab. Die Tabelle bleibt beim Neuladen erhalten und verschwindet, wenn du den Tab schließt.</p>
+              </div>
             </div>
           </div>
         </details>
@@ -247,15 +270,27 @@
                     <div class="metric compact">
                       <span class="metric-label">Ø Note</span>
                       <span class="metric-value" id="c-grade"></span>
-                    </div>
-                    <div class="metric compact">
-                      <span class="metric-label">Ø Prozent</span>
-                      <span class="metric-value" id="c-percent"></span>
+                      <span class="metric-trend"><span class="metric-context" id="c-grade-median"></span></span>
                     </div>
                     <div class="metric compact">
                       <span class="metric-label">Note 4 oder besser</span>
                       <span class="metric-value" id="c-passed"></span>
                       <span class="metric-trend"><span class="metric-context" id="c-passed-of"></span></span>
+                    </div>
+                    <div class="metric compact">
+                      <span class="metric-label">Ø Prozent</span>
+                      <span class="metric-value" id="c-percent"></span>
+                      <span class="metric-trend"><span class="metric-context" id="c-percent-median"></span></span>
+                    </div>
+                    <div class="metric compact">
+                      <span class="metric-label">Standardabweichung</span>
+                      <span class="metric-value" id="c-sd"></span>
+                      <span class="metric-trend"><span class="metric-context" id="c-sd-percent"></span></span>
+                    </div>
+                    <div class="metric compact">
+                      <span class="metric-label">Spannweite</span>
+                      <span class="metric-value" id="c-range"></span>
+                      <span class="metric-trend"><span class="metric-context" id="c-range-percent"></span></span>
                     </div>
                   </div>
                   <h3 class="chart-title">Notenspiegel</h3>
@@ -267,6 +302,17 @@
                       <caption class="visually-hidden">Notenspiegel</caption>
                       <thead><tr><th scope="col">Note</th><th scope="col" class="numeric">Anzahl</th><th scope="col" class="numeric">Anteil</th></tr></thead>
                       <tbody id="c-chart-body"></tbody>
+                    </table>
+                  </details>
+                  <h3 class="chart-title mt-6">Verteilung der Prozentwerte</h3>
+                  <p class="chart-subtitle">Anzahl je 10-Prozent-Bereich, beschriftet mit der Untergrenze. Zeigt Häufungen, die der Notenspiegel verdeckt, weil die Notenbereiche unterschiedlich breit sind.</p>
+                  <div class="bar-chart" role="img" id="c-hist"></div>
+                  <details class="chart-data">
+                    <summary>Daten als Tabelle</summary>
+                    <table class="data-table compact">
+                      <caption class="visually-hidden">Verteilung der Prozentwerte</caption>
+                      <thead><tr><th scope="col">Prozent</th><th scope="col" class="numeric">Anzahl</th></tr></thead>
+                      <tbody id="c-hist-body"></tbody>
                     </table>
                   </details>
                 </div>

@@ -96,17 +96,45 @@
   }
 
   /* --- Points calculator (teachers) ---------------------------------
-     One row per person, one cell per task. Empty = missing (0 must be
-     typed), values must fit the grid and the task maximum. Nothing is
-     stored; leaving the page with entries asks first. */
-  const REMOVE_ICON = '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>';
+     One row per person, one cell per task, built for typing a whole
+     class from a stack of exams: Enter / Space / + to the next task,
+     Shift+Enter or Backspace in an empty cell back, arrows like a
+     spreadsheet, paste from Excel fills several cells. Empty = missing
+     (0 must be typed). The sheet survives a reload (sessionStorage) and
+     is gone with the tab. */
+  const CLEAR_ICON = '<svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M22 3H7c-.69 0-1.23.35-1.59.88L0 12l5.41 8.11c.36.53.9.89 1.59.89h15c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-3 12.59L17.59 17 14 13.41 10.41 17 9 15.59 12.59 12 9 8.41 10.41 7 14 10.59 17.59 7 19 8.41 15.41 12 19 15.59z"/></svg>';
+  const SHEET_STORE = 'notenrechner-sheet';
+  const averageFormat = new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 });
   let tasks = { maxima: [], total: 0, problems: [] };
   let sheet = [[]];          // cell texts per person
   let sheetColumns = '';     // maxima the table was built for
   let rowResults = [];
+  let activeRow = 0;
+  let editedRow = null;      // row typed in since it got focus (announced when left)
 
   const isTouched = (row) => row.some((cell) => String(cell ?? '').trim() !== '');
   const taskList = (numbers) => numbers.map((n) => 'A' + n).join(', ');
+  const rowOf = (el) => Number(el.closest('tr').dataset.row);
+  const taskOf = (el) => Number(el.dataset.task);
+  const lastTask = () => tasks.maxima.length - 1;
+
+  function rowNote(row) {
+    const notes = row.invalid.map((x) => 'A' + x.task + ': ' + x.message);
+    if (row.touched && row.missing.length) notes.push(taskList(row.missing) + (row.missing.length === 1 ? ' fehlt' : ' fehlen'));
+    if (row.problem) notes.push(row.problem);
+    return notes.join('. ');
+  }
+
+  function saveSheet() {
+    try {
+      if (sheet.some(isTouched)) sessionStorage.setItem(SHEET_STORE, JSON.stringify({ columns: tasks.maxima.join('|'), tasksText: $('tasks').value, sheet }));
+      else sessionStorage.removeItem(SHEET_STORE);
+    } catch (e) { /* private mode: nothing to keep */ }
+  }
+
+  function savedSheet() {
+    try { return JSON.parse(sessionStorage.getItem(SHEET_STORE) || 'null'); } catch (e) { return null; }
+  }
 
   function renderTasks() {
     tasks = G.parseTaskMaxima($('tasks').value, settings.step);
@@ -136,20 +164,22 @@
         '<span class="text-muted" aria-hidden="true">max. ' + num(m) + '</span></th>').join('') +
       '<th scope="col" class="numeric">Summe</th><th scope="col" class="center">Note</th><th scope="col">Hinweis</th>' +
       '<th scope="col" class="actions"><span class="visually-hidden">Aktionen</span></th></tr>';
+    while (sheet.length > 1 && !isTouched(sheet[sheet.length - 1]) && !isTouched(sheet[sheet.length - 2])) sheet.pop();
     if (!sheet.length || isTouched(sheet[sheet.length - 1])) sheet.push([]);
     $('calc-body').innerHTML = '';
     sheet.forEach((_, i) => $('calc-body').appendChild(sheetRow(i)));
+    activeRow = Math.min(activeRow, sheet.length - 1);
   }
 
   function sheetRow(i) {
     const tr = document.createElement('tr');
     tr.dataset.row = String(i);
     tr.innerHTML = '<th scope="row" class="numeric">' + (i + 1) + '</th>' +
-      tasks.maxima.map((m, t) => '<td><input class="form-input" type="text" inputmode="decimal" autocomplete="off" data-task="' + t + '"' +
+      tasks.maxima.map((m, t) => '<td><input class="form-input" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" data-task="' + t + '"' +
         ' aria-label="Nr. ' + (i + 1) + ', Aufgabe ' + (t + 1) + '" aria-describedby="calc-note-' + i + '"></td>').join('') +
       '<td class="numeric" data-sum></td><td class="center" data-grade></td><td id="calc-note-' + i + '" data-note></td>' +
-      '<td class="actions"><button class="btn ghost small icon-only" type="button" data-remove aria-label="Zeile ' + (i + 1) + ' entfernen">' + REMOVE_ICON + '</button></td>';
-    tr.querySelectorAll('input').forEach((input) => { input.value = sheet[i][Number(input.dataset.task)] ?? ''; });
+      '<td class="actions"><button class="btn ghost small icon-only" type="button" data-clear aria-label="Punkte von Nr. ' + (i + 1) + ' löschen" title="Punkte dieser Zeile löschen">' + CLEAR_ICON + '</button></td>';
+    tr.querySelectorAll('input').forEach((input) => { input.value = sheet[i][taskOf(input)] ?? ''; });
     return tr;
   }
 
@@ -162,25 +192,92 @@
       if (problem && problem !== 'missing') input.setAttribute('aria-invalid', 'true');
       else input.removeAttribute('aria-invalid');
     });
-    const notes = [];
-    row.invalid.forEach((x) => notes.push('A' + x.task + ': ' + x.message));
-    if (row.touched && row.missing.length) notes.push(taskList(row.missing) + (row.missing.length === 1 ? ' fehlt' : ' fehlen'));
-    if (row.problem) notes.push(row.problem);
-    tr.querySelector('[data-note]').textContent = notes.join('. ');
+    tr.querySelector('[data-note]').textContent = rowNote(row);
     tr.querySelector('[data-sum]').innerHTML = !row.touched ? '' : row.complete
       ? num(row.sum)
       : '<span class="text-muted">' + num(row.sum) + '<span class="visually-hidden"> bisher</span></span>';
     tr.querySelector('[data-grade]').textContent = row.result ? row.result.grade : (row.touched ? '–' : '');
-    tr.querySelector('[data-remove]').hidden = !row.touched;
+    tr.querySelector('[data-clear]').hidden = !row.touched;
+    return row;
   }
 
-  function renderSheetCount() {
-    const touched = rowResults.filter((r) => r && r.touched);
-    const complete = touched.filter((r) => r.complete).length;
-    const open = touched.length - complete;
+  // First person still to do: an incomplete row, else the empty row at the end
+  function nextOpenRow() {
+    const open = rowResults.findIndex((r) => r && r.touched && !r.complete);
+    if (open >= 0) return open;
+    const empty = rowResults.findIndex((r) => r && !r.touched);
+    return empty >= 0 ? empty : sheet.length - 1;
+  }
+
+  function focusCell(row, task) {
+    const tr = $('calc-body').children[row];
+    const input = tr && tr.querySelectorAll('input')[task];
+    if (input) { input.focus(); input.select(); }
+    return Boolean(input);
+  }
+
+  // Jump to the first missing or wrong cell of a row
+  function focusProblem(i) {
+    const row = rowResults[i];
+    const t = row ? row.checks.findIndex((c) => c.problem) : 0;
+    focusCell(i, Math.max(0, t));
+  }
+
+  function markActive() {
+    [...$('calc-body').children].forEach((tr, i) => {
+      if (i === activeRow) tr.setAttribute('data-active', '');
+      else tr.removeAttribute('data-active');
+    });
+  }
+
+  // Big readout for the person being typed. Right after the last task of a
+  // person (focus already on the next, still empty row) it keeps showing the
+  // finished result, so it can be copied onto the exam.
+  function renderReadout() {
+    let i = Math.min(activeRow, rowResults.length - 1);
+    let row = rowResults[i];
+    let finished = false;
+    if (row && !row.touched && i > 0 && rowResults[i - 1] && rowResults[i - 1].complete) {
+      i -= 1;
+      row = rowResults[i];
+      finished = true;
+    }
+    $('cr-who').textContent = 'Summe Nr. ' + (i + 1) + (finished ? ', fertig' : '');
+    if (!row || !row.touched) {
+      $('cr-sum').textContent = '–';
+      $('cr-state').textContent = 'noch keine Punkte';
+      $('cr-grade').textContent = '–';
+      $('cr-word').textContent = '';
+      return;
+    }
+    $('cr-sum').textContent = num(row.sum);
+    $('cr-state').textContent = row.complete ? 'von ' + ofPoints(settings.max) : 'bisher. ' + rowNote(row);
+    $('cr-grade').textContent = row.result ? row.result.grade : '–';
+    $('cr-word').textContent = row.result ? row.result.word : 'erst wenn alles eingetragen ist';
+  }
+
+  function renderSheetSummary() {
+    const touched = rowResults.map((r, i) => ({ r, i })).filter(({ r }) => r && r.touched);
+    const done = touched.filter(({ r }) => r.complete);
+    const open = touched.filter(({ r }) => !r.complete);
+    const avg = (values) => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : null);
+    const avgGrade = avg(done.map(({ r }) => r.result.grade));
     $('calc-count').textContent = touched.length
-      ? complete + ' vollständig' + (open ? ', ' + open + ' noch nicht vollständig' : '')
+      ? done.length + ' vollständig' + (open.length ? ', ' + open.length + ' offen' : '') + (avgGrade !== null ? ', Ø Note ' + fixed(avgGrade, 2) : '')
       : 'Noch keine Punkte eingetragen';
+    $('calc-open').innerHTML = open.length
+      ? '<span class="text-muted">Offen:</span> ' + open.map(({ r, i }) =>
+        '<button class="btn ghost small" type="button" data-goto="' + i + '">Nr. ' + (i + 1) + ': ' + escapeHtml(rowNote(r)) + '</button>').join('')
+      : '';
+    $('calc-next').textContent = 'Weiter bei Nr. ' + (nextOpenRow() + 1);
+    // Averages per task: which task was hard
+    const fmt = (a) => (a === null ? '' : averageFormat.format(a));
+    $('calc-foot').innerHTML = done.length || touched.length
+      ? '<tr><th scope="row" class="numeric">Ø</th>' + tasks.maxima.map((m, t) =>
+        '<td class="numeric">' + fmt(avg(touched.map(({ r }) => r.checks[t].points).filter((p) => p !== null))) + '</td>').join('') +
+        '<td class="numeric">' + fmt(avg(done.map(({ r }) => r.sum))) + '</td><td class="center">' + (avgGrade === null ? '' : fixed(avgGrade, 2)) + '</td><td colspan="2"></td></tr>'
+      : '';
+    renderReadout();
   }
 
   function renderCalc() {
@@ -188,50 +285,117 @@
     if (sheetColumns !== tasks.maxima.join('|')) buildSheet();
     rowResults = [];
     sheet.forEach((_, i) => renderSheetRow(i));
-    renderSheetCount();
+    markActive();
+    renderSheetSummary();
+  }
+
+  function ensureTrailingRow() {
+    if (isTouched(sheet[sheet.length - 1])) {
+      sheet.push([]);
+      $('calc-body').appendChild(sheetRow(sheet.length - 1));
+      renderSheetRow(sheet.length - 1);
+    }
   }
 
   function onSheetInput(e) {
     const input = e.target.closest('input[data-task]');
     if (!input) return;
-    const i = Number(input.closest('tr').dataset.row);
-    sheet[i][Number(input.dataset.task)] = input.value;
-    renderSheetRow(i);
-    if (i === sheet.length - 1 && isTouched(sheet[i])) {       // always one empty row at the end
-      sheet.push([]);
-      $('calc-body').appendChild(sheetRow(sheet.length - 1));
-      renderSheetRow(sheet.length - 1);
-    }
-    renderSheetCount();
+    const i = rowOf(input);
+    sheet[i][taskOf(input)] = input.value;
+    const row = renderSheetRow(i);
+    ensureTrailingRow();
+    renderSheetSummary();
+    saveSheet();
+    editedRow = i;
   }
 
-  function focusCell(row, task) {
-    const tr = $('calc-body').children[row];
-    const input = tr && tr.querySelectorAll('input')[task];
-    if (input) { input.focus(); input.select(); }
+  function onSheetFocus(e) {
+    const input = e.target.closest('input[data-task]');
+    if (!input) return;
+    const previous = activeRow;
+    activeRow = rowOf(input);
+    // Announce a person's result once, when moving on from their row (not while typing "1" of "10")
+    if (editedRow !== null && editedRow === previous && previous !== activeRow && rowResults[previous] && rowResults[previous].touched) {
+      const done = rowResults[previous];
+      $('calc-live').textContent = done && done.complete
+        ? 'Nr. ' + (previous + 1) + ': ' + points(done.sum) + ', Note ' + done.result.grade + '.'
+        : 'Nr. ' + (previous + 1) + ' ist noch offen: ' + rowNote(done) + '.';
+      editedRow = null;
+    }
+    markActive();
+    renderReadout();
   }
 
   function onSheetKey(e) {
     const input = e.target.closest('input[data-task]');
-    if (!input) return;
-    const i = Number(input.closest('tr').dataset.row);
-    const t = Number(input.dataset.task);
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      if (t < tasks.maxima.length - 1) focusCell(i, t + 1);
-      else focusCell(i + 1, 0);
-    } else if (e.key === 'ArrowDown') { e.preventDefault(); focusCell(i + 1, t); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); focusCell(i - 1, t); }
+    if (!input || e.altKey || e.ctrlKey || e.metaKey) return;
+    const i = rowOf(input);
+    const t = taskOf(input);
+    const forward = () => (t < lastTask() ? focusCell(i, t + 1) : focusCell(i + 1, 0));
+    const back = () => (t > 0 ? focusCell(i, t - 1) : i > 0 && focusCell(i - 1, lastTask()));
+    const caret = [input.selectionStart, input.selectionEnd];
+    const atStart = caret[0] === 0 && caret[1] === 0;
+    const atEnd = caret[0] === input.value.length && caret[1] === input.value.length;
+    switch (e.key) {
+      case 'Enter': e.preventDefault(); if (e.shiftKey) back(); else forward(); break;
+      case ' ':
+      case '+': e.preventDefault(); forward(); break;
+      case 'Backspace': if (input.value === '') { e.preventDefault(); back(); } break;
+      case 'ArrowDown': e.preventDefault(); focusCell(i + 1, t); break;
+      case 'ArrowUp': e.preventDefault(); focusCell(i - 1, t); break;
+      case 'ArrowRight': if (atEnd) { e.preventDefault(); forward(); } break;
+      case 'ArrowLeft': if (atStart) { e.preventDefault(); back(); } break;
+      default:
+    }
   }
 
-  function removeSheetRow(e) {
-    const btn = e.target.closest('[data-remove]');
-    if (!btn) return;
-    const i = Number(btn.closest('tr').dataset.row);
-    sheet.splice(i, 1);
+  // Pasting several values (an Excel row or block) fills the cells from here on
+  function onSheetPaste(e) {
+    const input = e.target.closest('input[data-task]');
+    if (!input) return;
+    const text = (e.clipboardData && e.clipboardData.getData('text')) || '';
+    if (!/[\t\n;]|\S\s+\S/.test(text.trim())) return;
+    e.preventDefault();
+    const i0 = rowOf(input);
+    const t0 = taskOf(input);
+    let dropped = 0;
+    let lastRow = i0;
+    let lastCol = t0;
+    text.replace(/\r/g, '').replace(/\n+$/, '').split('\n').forEach((line, r) => {
+      const cells = line.includes('\t') ? line.split('\t') : line.trim().split(/[\s;]+/);
+      const i = i0 + r;
+      while (sheet.length <= i) sheet.push([]);
+      cells.forEach((value, c) => {
+        if (t0 + c > lastTask()) { if (value.trim()) dropped++; return; }
+        sheet[i][t0 + c] = value.trim();
+        lastRow = i;
+        lastCol = t0 + c;
+      });
+    });
     sheetColumns = '';
     renderCalc();
-    focusCell(Math.min(i, sheet.length - 1), 0);
+    saveSheet();
+    if (lastCol < lastTask()) focusCell(lastRow, lastCol + 1);
+    else focusCell(lastRow + 1, 0);
+    if (dropped) B3.toast('warning', dropped + (dropped === 1 ? ' Wert passte' : ' Werte passten') + ' nicht mehr in die Aufgaben und wurde' + (dropped === 1 ? '' : 'n') + ' weggelassen.');
+  }
+
+  async function onSheetClick(e) {
+    const clear = e.target.closest('[data-clear]');
+    if (!clear) return;
+    const i = rowOf(clear);
+    const ok = await B3.confirm({
+      title: 'Punkte von Nr. ' + (i + 1) + ' löschen?',
+      message: 'Die Zeile bleibt stehen, damit die Nummern zum Stapel passen. Nur ihre Punkte werden gelöscht.',
+      confirmLabel: 'Punkte löschen',
+      danger: true
+    });
+    if (!ok) return;
+    sheet[i] = [];
+    sheetColumns = '';
+    renderCalc();
+    saveSheet();
+    focusCell(i, 0);
   }
 
   // Sum and grade per person, one line each; incomplete rows stay empty so the order holds
@@ -317,8 +481,21 @@
     $('c-count').textContent = stats.count;
     $('c-grade').textContent = fixed(stats.averageGrade, 2);
     $('c-percent').innerHTML = pct(stats.averagePercent) + '<span class="metric-unit">%</span>';
+    $('c-grade-median').textContent = 'Median ' + num(stats.medianGrade);
     $('c-passed').textContent = stats.passed;
     $('c-passed-of').textContent = 'von ' + stats.count;
+    $('c-percent-median').textContent = 'Median ' + pctUnit(stats.medianPercent) + ', ' + points(stats.medianPoints);
+    $('c-sd').innerHTML = stats.sdPoints === null ? '–' : averageFormat.format(stats.sdPoints) + '<span class="metric-unit">Punkte</span>';
+    $('c-sd-percent').textContent = stats.sdPoints === null ? 'ab 2 Werten' : averageFormat.format(stats.sdPercent) + ' Prozentpunkte';
+    $('c-range').textContent = num(stats.minPoints) + ' – ' + num(stats.maxPoints);
+    $('c-range-percent').textContent = 'Punkte, ' + pct(stats.minPercent) + ' – ' + pctUnit(stats.maxPercent);
+    const mostInBin = Math.max(...stats.percentBins);
+    const binLabel = (b) => (b === 9 ? '90 % und mehr' : b * 10 + ' bis unter ' + (b + 1) * 10 + ' %');
+    $('c-hist').setAttribute('aria-label', 'Verteilung der Prozentwerte: ' + stats.percentBins.map((n, b) => binLabel(b) + ': ' + n).join(', '));
+    $('c-hist').innerHTML = stats.percentBins.map((n, b) =>
+      '<div class="bar-chart-item"><div class="bar-track"><div class="bar" style="height: ' + (mostInBin ? Math.round((n / mostInBin) * 100) : 0) + '%">' +
+      '<span class="bar-value">' + n + '</span></div></div><span class="bar-label">' + b * 10 + '</span></div>').join('');
+    $('c-hist-body').innerHTML = stats.percentBins.map((n, b) => '<tr><td>' + binLabel(b) + '</td><td class="numeric">' + n + '</td></tr>').join('');
 
     const most = Math.max(...stats.distribution);
     $('c-chart-subtitle').textContent = stats.count + ' ausgewertet' + (empty ? ', ' + empty + ' leer' : '') + ', Ø Note ' + fixed(stats.averageGrade, 2);
@@ -439,8 +616,16 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     fieldsFromUrl();
+    const saved = savedSheet();
+    if (saved && !$('tasks').value.trim()) $('tasks').value = saved.tasksText || '';
     renderExamples();
     update({ syncUrl: false });
+    if (settings && saved && saved.columns === tasks.maxima.join('|') && Array.isArray(saved.sheet)) {
+      sheet = saved.sheet.map((row) => (Array.isArray(row) ? row.map((c) => String(c ?? '')) : []));
+      sheetColumns = '';
+      renderCalc();
+    }
+    if (tasks.maxima.length) $('calc-section').open = true;
 
     $('settings').addEventListener('submit', (e) => e.preventDefault());
     ['title', 'max', 'bonus', 'points', 'tasks'].forEach((id) => $(id).addEventListener('input', () => update()));
@@ -449,7 +634,13 @@
     $('list').addEventListener('input', () => { if (settings) renderClass(); });
     $('calc-body').addEventListener('input', onSheetInput);
     $('calc-body').addEventListener('keydown', onSheetKey);
-    $('calc-body').addEventListener('click', removeSheetRow);
+    $('calc-body').addEventListener('focusin', onSheetFocus);
+    $('calc-body').addEventListener('paste', onSheetPaste);
+    $('calc-body').addEventListener('click', onSheetClick);
+    $('calc-open').addEventListener('click', (e) => { const b = e.target.closest('[data-goto]'); if (b) focusProblem(Number(b.dataset.goto)); });
+    $('calc-next').addEventListener('click', () => focusProblem(nextOpenRow()));
+    // Enter in the task field starts typing points
+    $('tasks').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !$('calc-sheet').hidden) { e.preventDefault(); focusProblem(nextOpenRow()); } });
     $('tasks-apply').addEventListener('click', () => { $('max').value = toField(tasks.total); update(); });
     $('calc-copy').addEventListener('click', () => copy(sheetLines(true).join('\n'), 'Summen und Noten kopiert, eine Zeile pro Person.'));
     $('calc-transfer').addEventListener('click', () => {
@@ -460,13 +651,14 @@
       B3.toast('success', 'Summen an „Klasse auswerten“ übergeben.');
     });
     $('calc-clear').addEventListener('click', async () => {
-      const ok = await B3.confirm({ title: 'Alle Punkte löschen?', message: 'Die Punkte aller Personen in der Tabelle werden gelöscht.', confirmLabel: 'Punkte löschen', danger: true });
+      const ok = await B3.confirm({ title: 'Alle Punkte löschen?', message: 'Die Punkte aller Personen in der Tabelle werden gelöscht.', confirmLabel: 'Alle Punkte löschen', danger: true });
       if (!ok) return;
       sheet = [[]];
       sheetColumns = '';
+      activeRow = 0;
       renderCalc();
+      saveSheet();
     });
-    // Points typed in the calculator are not stored anywhere: ask before leaving
     window.addEventListener('beforeunload', (e) => {
       if (sheet.some(isTouched)) { e.preventDefault(); e.returnValue = ''; }
     });

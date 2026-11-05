@@ -76,6 +76,32 @@
   border-top: 1px solid var(--color-border);
 }
 
+/* Readout for the person being typed: glanceable from the exam stack */
+#calc-panel {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+#calc-panel .metric-group {
+  flex: 1;
+  max-width: 28rem;
+}
+
+#calc-open:not(:empty) {
+  padding: var(--space-2) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* The row being typed: ink bar on the number, like the current nav item */
+#calc-body tr[data-active] {
+  background: var(--color-hover);
+}
+
+#calc-body tr[data-active] > th {
+  box-shadow: inset 3px 0 0 var(--color-text);
+  font-weight: var(--font-weight-bold);
+}
+
 /* List of skipped entries inside the warning alert */
 #class-skipped-list {
   margin-top: var(--space-1);

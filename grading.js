@@ -211,6 +211,23 @@
     return lines.map((line) => (LETTERS.test(line) ? '' : line.replace(TOKEN, (raw) => parseToken(raw).map(fn).join(',')))).join('\n');
   }
 
+  /* Descriptive statistics. Standard deviation as the sample one (n − 1),
+     like Excel's STABW.S. */
+  const mean = (values) => values.reduce((a, b) => a + b, 0) / values.length;
+  function median(values) {
+    const v = [...values].sort((a, b) => a - b);
+    const n = v.length;
+    return n % 2 ? v[(n - 1) / 2] : (v[n / 2 - 1] + v[n / 2]) / 2;
+  }
+  function standardDeviation(values) {
+    if (values.length < 2) return null;
+    const m = mean(values);
+    return Math.sqrt(values.reduce((a, x) => a + (x - m) ** 2, 0) / (values.length - 1));
+  }
+  // Counts per 10 % band: 0–<10, …, 80–<90, 90 and more (bonus included)
+  const percentBins = (percents) => Array.from({ length: 10 }, (_, b) =>
+    percents.filter((p) => (b === 9 ? p >= 90 - 1e-7 : p >= b * 10 - 1e-7 && p < (b + 1) * 10 - 1e-7)).length);
+
   /* Text + settings → evaluated rows, skipped entries, statistics and
      the grades as text in the same layout as the input. */
   function evaluateList(text, settings) {
@@ -231,7 +248,9 @@
     });
     const gradesText = mapList(text, (v) => { const r = gradeOf(v); return r ? String(r.grade) : ''; });
     const n = rows.length;
-    const sum = (f) => rows.reduce((acc, r) => acc + f(r), 0);
+    const grades = rows.map((r) => r.grade);
+    const pointList = rows.map((r) => r.points);
+    const percents = rows.map((r) => r.percent);
     return {
       rows,
       skipped,
@@ -239,11 +258,21 @@
       gradesText,
       stats: n === 0 ? null : {
         count: n,
-        averageGrade: sum((r) => r.grade) / n,
-        averagePoints: sum((r) => r.points) / n,
-        averagePercent: sum((r) => r.percent) / n,
+        averageGrade: mean(grades),
+        medianGrade: median(grades),
+        averagePoints: mean(pointList),
+        medianPoints: median(pointList),
+        sdPoints: standardDeviation(pointList),
+        minPoints: Math.min(...pointList),
+        maxPoints: Math.max(...pointList),
+        averagePercent: mean(percents),
+        medianPercent: median(percents),
+        sdPercent: standardDeviation(percents),
+        minPercent: Math.min(...percents),
+        maxPercent: Math.max(...percents),
         passed: rows.filter((r) => r.grade <= 4).length,
-        distribution: KEY.map((band) => rows.filter((r) => r.grade === band.grade).length)
+        distribution: KEY.map((band) => rows.filter((r) => r.grade === band.grade).length),
+        percentBins: percentBins(percents)
       }
     };
   }
@@ -312,7 +341,7 @@
     parseNumber, ceilToStep, floorTo, percentOf,
     bandForPercent, decimalForPercent, wholePercent,
     checkSettings, checkPoints, buildScale, evaluate,
-    parseList, mapList, evaluateList,
+    parseList, mapList, evaluateList, median, standardDeviation,
     isOnGrid, parseTaskMaxima, checkTaskCell, evaluateSheetRow
   };
 });

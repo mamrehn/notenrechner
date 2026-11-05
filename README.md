@@ -9,11 +9,19 @@ Der IHK-Notenschlüssel, umgerechnet auf jede Höchstpunktzahl:
   Nachkommastellen (z. B. 13,353 aus mebis), Komma oder Punkt
 - Ergebnis **als Text kopieren** (für E-Mail oder Messenger) oder als Link teilen
 - Ausdruck mit Titel der Prüfung und optional dem Namen
-- Für Lehrkräfte: **Punkte zusammenzählen** mit Höchstpunkten je Aufgabe. Die Tabelle
-  meldet fehlende Aufgaben, unmögliche Werte (über dem Maximum, nicht im Raster aus
-  halben, ganzen oder 0,01 Punkten) und zeigt Summe und Note pro Person
+- Für Lehrkräfte: **Punkte zusammenzählen** mit Höchstpunkten je Aufgabe, gebaut für
+  eine ganze Klasse am Stück:
+  - <kbd>Enter</kbd>, <kbd>Leertaste</kbd> oder <kbd>+</kbd> zur nächsten Aufgabe, nach der
+    letzten zur nächsten Person; <kbd>⇧ Enter</kbd> oder <kbd>Rücktaste</kbd> im leeren Feld
+    zurück; Pfeiltasten wie in einer Tabelle; Einfügen aus Excel füllt mehrere Zellen
+  - große Anzeige von Summe und Note der aktuellen Person (bleibt nach der letzten Aufgabe
+    stehen, bis die nächste Person beginnt), Liste der offenen Zeilen, „Weiter bei Nr. …“
+  - meldet fehlende Aufgaben und unmögliche Werte (über dem Maximum, nicht im Raster aus
+    halben, ganzen oder 0,01 Punkten); Durchschnitt je Aufgabe in der Fußzeile
+  - bleibt beim Neuladen erhalten (sessionStorage), verschwindet mit dem Tab
 - Für Lehrkräfte: Klasse auswerten (nur Punkte, keine Namen, beliebig getrennt, z. B.
-  „2 3  32 26 3.5 5,8“), Notenspiegel, Noten im selben Layout zurück nach Excel kopieren
+  „2 3  32 26 3.5 5,8“): Durchschnitt und Median, Standardabweichung, Spannweite,
+  Notenspiegel, Verteilung in 10-Prozent-Bereichen; Noten im selben Layout zurück nach Excel
 - Zusatzpunkte, Farbschema automatisch / hell / dunkel (ein Knopf), funktioniert offline
 
 ## Grundlage

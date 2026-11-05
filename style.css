@@ -3393,7 +3393,9 @@ details.collapsible summary:hover {
   background: var(--color-hover);
 }
 
-details.collapsible summary svg {
+/* Only the chevron (direct child) turns; icons inside the title, e.g. an
+   audience badge, stay as they are. */
+details.collapsible summary > svg {
   width: 20px;
   height: 20px;
   color: var(--color-text-muted);
@@ -3405,7 +3407,7 @@ details.collapsible[open] summary {
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
-details.collapsible[open] summary svg {
+details.collapsible[open] summary > svg {
   transform: rotate(180deg);
 }
 

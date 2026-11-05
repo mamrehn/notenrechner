@@ -192,3 +192,19 @@ test('class statistics', () => {
   assert.ok(Math.abs(result.stats.averageGrade - 8 / 3) < 1e-12);
   assert.equal(G.evaluateList('', S(13)).stats, null);
 });
+
+test('class statistics: median, standard deviation, range, percent bands', () => {
+  assert.equal(G.median([3, 1, 2]), 2);
+  assert.equal(G.median([4, 1, 3, 2]), 2.5);
+  assert.ok(Math.abs(G.standardDeviation([2, 4, 4, 4, 5, 5, 7, 9]) - 2.138089935) < 1e-9, 'sample SD like STABW.S');
+  assert.equal(G.standardDeviation([5]), null);
+  const { stats } = G.evaluateList('10 20 30 40 25 39,5', S(40));
+  assert.equal(stats.medianPoints, 27.5);
+  assert.equal(stats.minPercent, 25);
+  assert.equal(stats.maxPercent, 100);
+  // 25 %, 50 %, 75 %, 100 %, 62,5 %, 98,75 % → grades 6, 4, 3, 1, 4, 1
+  assert.equal(stats.medianGrade, 3.5);
+  assert.deepEqual(stats.percentBins, [0, 0, 1, 0, 0, 1, 1, 1, 0, 2]);
+  const bonus = G.evaluateList('33', { max: 30, step: 0.5, bonus: 3 }).stats;
+  assert.equal(bonus.percentBins[9], 1, '110 % counts in the top band');
+});
