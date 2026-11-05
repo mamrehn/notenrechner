@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="IHK-Notenschlüssel für jede Höchstpunktzahl: Notengrenzen in halben oder ganzen Punkten, Note und IHK-Dezimalnote zu jeder Punktzahl, Notenspiegel einer Klasse.">
+  <meta name="description" content="IHK-Notenschlüssel für jede Höchstpunktzahl: Notengrenzen in halben oder ganzen Punkten, Note und Dezimalnote zu jeder Punktzahl, auch mit Nachkommastellen.">
   <title>Notenrechner – IHK-Notenschlüssel</title>
-  <script>try{document.documentElement.dataset.theme=localStorage.getItem('b3-theme')||'light'}catch(e){}</script>
+  <script>try{var t=localStorage.getItem('b3-theme');document.documentElement.dataset.theme=t==='light'||t==='dark'?t:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}catch(e){}</script>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="fonts/fonts.css">
   <link rel="stylesheet" href="style.css">
@@ -25,27 +25,29 @@
       </span>
     </a>
     <div class="header-actions">
-      <button class="btn ghost icon-only" type="button" data-b3-theme-toggle aria-label="Dunkles Design">
-        <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M9.37 5.51c-.18.64-.27 1.31-.27 1.99 0 4.08 3.32 7.4 7.4 7.4.68 0 1.35-.09 1.99-.27C17.45 17.19 14.93 19 12 19c-3.86 0-7-3.14-7-7 0-2.93 1.81-5.45 4.37-6.49zM12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
-      </button>
+      <button class="btn ghost icon-only" type="button" data-b3-theme-toggle title="Farbschema: automatisch" aria-label="Farbschema wechseln"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 0 18zm0 0a9 9 0 0 1 0 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
     </div>
   </header>
 
   <div class="app-layout">
     <main class="main-content" id="main">
-      <div class="page-header">
+      <div class="page-header" data-print="hide">
         <div>
           <h1 class="page-title">Notenschlüssel für deine Prüfung</h1>
-          <p class="page-lede">Der 100-Punkte-Schlüssel der IHK, umgerechnet auf jede Höchstpunktzahl. Gib erreichte Punkte ein, um die Note nachzuschlagen.</p>
+          <p class="page-lede">Der 100-Punkte-Schlüssel der IHK, umgerechnet auf jede Höchstpunktzahl.</p>
         </div>
         <div class="page-actions">
           <button class="btn secondary" type="button" id="print">
             <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>
             Drucken
           </button>
-          <button class="btn primary" type="button" id="copy-link">
+          <button class="btn secondary" type="button" id="copy-link">
             <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
             Link kopieren
+          </button>
+          <button class="btn primary" type="button" id="copy-text">
+            <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            Als Text kopieren
           </button>
         </div>
       </div>
@@ -57,39 +59,43 @@
         </div>
       </noscript>
 
+      <!-- Print only: what the sheet is about -->
+      <div class="mb-6" id="print-header" data-print="only">
+        <p class="page-title" id="print-title">Notenschlüssel</p>
+        <dl class="kv mt-4" id="print-facts"></dl>
+      </div>
+
       <div class="grid cols-2 mb-8" data-print="hide">
         <section class="card" aria-labelledby="exam-title">
           <div class="card-header">
             <h2 class="card-title" id="exam-title">Prüfung</h2>
           </div>
-          <form id="settings" novalidate>
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label required" for="max">Höchstpunktzahl</label>
-                <input class="form-input" id="max" name="max" type="text" inputmode="decimal" autocomplete="off" required value="100" aria-describedby="max-hint max-error">
-                <span class="form-hint" id="max-hint">Punkte für 100&nbsp;%</span>
-                <span class="form-error" id="max-error" hidden></span>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="bonus">Zusatzpunkte</label>
-                <input class="form-input" id="bonus" name="bonus" type="text" inputmode="decimal" autocomplete="off" aria-describedby="bonus-hint bonus-error">
-                <span class="form-hint" id="bonus-hint">Optional. Ändern keine Notengrenze.</span>
-                <span class="form-error" id="bonus-error" hidden></span>
+          <form class="form-grid" id="settings" novalidate>
+            <div class="form-group span-full">
+              <label class="form-label" for="title">Titel</label>
+              <input class="form-input" id="title" name="title" type="text" autocomplete="off" maxlength="120" placeholder="z. B. 2. Schulaufgabe Datenbanken" aria-describedby="title-hint">
+              <span class="form-hint" id="title-hint">Optional. Steht auf dem Ausdruck und im kopierten Text.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label required" for="max">Höchstpunktzahl</label>
+              <input class="form-input" id="max" name="max" type="text" inputmode="decimal" autocomplete="off" required value="100" aria-describedby="max-hint max-error">
+              <span class="form-hint" id="max-hint">Punkte für 100&nbsp;%</span>
+              <span class="form-error" id="max-error" hidden></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bonus">Zusatzpunkte</label>
+              <input class="form-input" id="bonus" name="bonus" type="text" inputmode="decimal" autocomplete="off" aria-describedby="bonus-hint bonus-error">
+              <span class="form-hint" id="bonus-hint">Optional</span>
+              <span class="form-error" id="bonus-error" hidden></span>
+            </div>
+            <div class="form-group mb-0 span-full">
+              <span class="form-label" id="step-label">Notengrenzen in</span>
+              <div class="segmented" role="group" aria-labelledby="step-label" id="step">
+                <button type="button" value="0.5" aria-pressed="true">halben Punkten</button>
+                <button type="button" value="1" aria-pressed="false">ganzen Punkten</button>
+                <button type="button" value="0.01" aria-pressed="false">0,01 Punkten (mebis)</button>
               </div>
             </div>
-            <fieldset class="form-group mb-0">
-              <legend class="form-label">Punkteschritte</legend>
-              <div class="radio-group">
-                <label class="radio-option">
-                  <input type="radio" name="step" value="0.5" checked>
-                  <span>Halbe Punkte <span class="option-hint">Notengrenzen auf den nächsten halben Punkt aufgerundet</span></span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="step" value="1">
-                  <span>Ganze Punkte <span class="option-hint">Notengrenzen auf den nächsten ganzen Punkt aufgerundet</span></span>
-                </label>
-              </div>
-            </fieldset>
           </form>
         </section>
 
@@ -97,32 +103,39 @@
           <div class="card-header">
             <h2 class="card-title" id="lookup-title">Note nachschlagen</h2>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="points">Erreichte Punkte</label>
-            <input class="form-input" id="points" name="p" type="text" inputmode="decimal" autocomplete="off" aria-describedby="points-hint points-error">
-            <span class="form-hint" id="points-hint">Markiert die passende Zeile im Notenschlüssel.</span>
-            <span class="form-error" id="points-error" hidden></span>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="points">Erreichte Punkte</label>
+              <input class="form-input" id="points" name="p" type="text" inputmode="decimal" autocomplete="off" aria-describedby="points-hint points-error">
+              <span class="form-hint" id="points-hint">Auch mit Nachkommastellen, z.&nbsp;B. 13,353</span>
+              <span class="form-error" id="points-error" hidden></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="name">Name</label>
+              <input class="form-input" id="name" type="text" autocomplete="off" maxlength="80" aria-describedby="name-hint">
+              <span class="form-hint" id="name-hint">Optional, nur für Ausdruck und Text. Wird nicht gespeichert.</span>
+            </div>
           </div>
           <p class="text-muted mb-0" id="result-empty">Die Note erscheint hier, sobald du Punkte eingibst.</p>
           <div id="result" hidden>
-            <div class="metric-group mb-4">
+            <div class="metric-group mb-0">
               <div class="metric hero">
                 <span class="metric-label">Note</span>
                 <span class="metric-value" id="r-grade"></span>
                 <span class="metric-trend"><span class="metric-context" id="r-word"></span></span>
               </div>
               <div class="metric">
-                <span class="metric-label">Anteil</span>
-                <span class="metric-value" id="r-share"></span>
+                <span class="metric-label">Prozent</span>
+                <span class="metric-value" id="r-percent"></span>
                 <span class="metric-trend"><span class="metric-context" id="r-points"></span></span>
               </div>
               <div class="metric">
-                <span class="metric-label">IHK-Dezimalnote</span>
+                <span class="metric-label">Dezimalnote</span>
                 <span class="metric-value" id="r-decimal"></span>
-                <span class="metric-trend"><span class="metric-context" id="r-ihk"></span></span>
+                <span class="metric-trend"><span class="metric-context">laut IHK-Tabelle</span></span>
               </div>
             </div>
-            <p class="mb-0" id="r-next"></p>
+            <p class="text-muted mt-4 mb-0" id="r-between" hidden></p>
           </div>
           <p class="visually-hidden" id="result-live" aria-live="polite"></p>
         </section>
@@ -141,149 +154,149 @@
                 <tr>
                   <th scope="col" class="center">Note</th>
                   <th scope="col">Bezeichnung</th>
-                  <th scope="col" class="numeric">Punkte von</th>
-                  <th scope="col" class="numeric">bis</th>
-                  <th scope="col" class="numeric">IHK-Punkte</th>
+                  <th scope="col" class="center">Punkte</th>
+                  <th scope="col" class="center">Prozent</th>
                 </tr>
               </thead>
               <tbody id="key-body"></tbody>
             </table>
           </div>
         </div>
+        <p class="form-hint mb-4" id="key-note">Punkte mit Nachkommastellen, z.&nbsp;B. aus mebis, ordnet der Prozentwert ein.</p>
 
-        <details class="collapsible" id="all-scores">
+
+        <details class="collapsible" id="class-section" data-print="hide">
           <summary>
-            <span>Note für jede Punktzahl</span>
+            <span class="cluster">
+              <span>Klasse auswerten</span>
+              <span class="badge teacher"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3H3c-1.11 0-2 .89-2 2v12c0 1.1.89 2 2 2h5v2h8v-2h2v-2H3V5h18v8h2V5c0-1.11-.9-2-2-2zm-8 7c0-1.65-1.35-3-3-3S7 8.35 7 10s1.35 3 3 3 3-1.35 3-3zm-3 1c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 3.43c0-1.65-3.33-2.43-6-2.43s-6 .78-6 2.43V16h12v-1.57zM6.48 14c.74-.48 2.22-1 3.52-1s2.77.49 3.52 1H6.48zM22 15h-2v2h2v-2zm-2-6h2v4h-2V9z"/></svg>Für Lehrkräfte</span>
+            </span>
             <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
           </summary>
           <div class="collapsible-inner">
-            <div class="table-scroll sticky">
-              <table class="data-table compact">
-                <caption class="visually-hidden">Anteil, IHK-Punkte, Note und IHK-Dezimalnote für jede mögliche Punktzahl</caption>
-                <thead>
-                  <tr>
-                    <th scope="col" class="numeric">Punkte</th>
-                    <th scope="col" class="numeric">Anteil</th>
-                    <th scope="col" class="numeric">IHK-Punkte</th>
-                    <th scope="col" class="center">Note</th>
-                    <th scope="col" class="numeric">Dezimalnote</th>
-                  </tr>
-                </thead>
-                <tbody id="scores-body"></tbody>
-              </table>
+            <div class="grid cols-2">
+              <div data-print="hide">
+                <div class="form-group">
+                  <label class="form-label" for="list">Punkte</label>
+                  <textarea class="form-textarea" id="list" rows="8" spellcheck="false" autocomplete="off" aria-describedby="list-hint" placeholder="11,5&#10;9&#10;13,353"></textarea>
+                  <span class="form-hint" id="list-hint">Nur Punkte, keine Namen. Du kannst eine Spalte oder Zeile aus Excel einfügen. Die Liste bleibt in deinem Browser und wird nirgends gespeichert.</span>
+                </div>
+                <div class="form-group mb-0">
+                  <label class="form-label" for="separator">Trennzeichen</label>
+                  <select class="form-select" id="separator" aria-describedby="separator-hint">
+                    <option value="line" selected>Zeilenumbruch, eine Zahl pro Zeile</option>
+                    <option value="semicolon">Semikolon</option>
+                    <option value="space">Tabulator oder Leerzeichen</option>
+                    <option value="comma">Komma</option>
+                  </select>
+                  <span class="form-hint" id="separator-hint">Zeilenumbrüche trennen immer. Bei Komma schreibst du Dezimalzahlen mit Punkt, z.&nbsp;B. 11.5.</span>
+                </div>
+              </div>
+
+              <div>
+                <p class="text-muted" id="class-empty">Sobald du Punkte einfügst, erscheinen hier Durchschnitt und Notenspiegel.</p>
+                <div id="class-stats" hidden>
+                  <div class="metric-group">
+                    <div class="metric compact">
+                      <span class="metric-label">Ausgewertet</span>
+                      <span class="metric-value" id="c-count"></span>
+                    </div>
+                    <div class="metric compact">
+                      <span class="metric-label">Ø Note</span>
+                      <span class="metric-value" id="c-grade"></span>
+                    </div>
+                    <div class="metric compact">
+                      <span class="metric-label">Ø Prozent</span>
+                      <span class="metric-value" id="c-percent"></span>
+                    </div>
+                    <div class="metric compact">
+                      <span class="metric-label">Note 4 oder besser</span>
+                      <span class="metric-value" id="c-passed"></span>
+                      <span class="metric-trend"><span class="metric-context" id="c-passed-of"></span></span>
+                    </div>
+                  </div>
+                  <h3 class="chart-title">Notenspiegel</h3>
+                  <p class="chart-subtitle" id="c-chart-subtitle"></p>
+                  <div class="bar-chart" role="img" id="c-chart"></div>
+                  <details class="chart-data">
+                    <summary>Daten als Tabelle</summary>
+                    <table class="data-table compact">
+                      <caption class="visually-hidden">Notenspiegel</caption>
+                      <thead><tr><th scope="col">Note</th><th scope="col" class="numeric">Anzahl</th><th scope="col" class="numeric">Anteil</th></tr></thead>
+                      <tbody id="c-chart-body"></tbody>
+                    </table>
+                  </details>
+                </div>
+              </div>
+            </div>
+
+            <div class="alert warning mt-5" role="status" id="class-skipped" hidden>
+              <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+              <div>
+                <span class="alert-title" id="class-skipped-title"></span>
+                <ul id="class-skipped-list"></ul>
+              </div>
+            </div>
+
+            <div class="card flush mt-5 mb-0" id="class-results" hidden>
+              <div class="card-header">
+                <h3 class="card-title">Ergebnisse</h3>
+                <button class="btn secondary small" type="button" id="copy-grades">
+                  <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                  Noten kopieren
+                </button>
+              </div>
+              <div class="table-scroll sticky">
+                <table class="data-table" id="class-table">
+                  <caption class="visually-hidden">Ergebnisse in der Reihenfolge der Eingabe</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" class="numeric">Nr.</th>
+                      <th scope="col" class="numeric">Punkte</th>
+                      <th scope="col" class="numeric">Prozent</th>
+                      <th scope="col" class="center">Note</th>
+                      <th scope="col" class="numeric">Dezimalnote</th>
+                    </tr>
+                  </thead>
+                  <tbody id="c-rows"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </details>
-      </section>
 
-      <section aria-labelledby="class-title" id="class-section" data-print="hide">
-        <div class="section-header">
-          <h2 id="class-title">Klasse auswerten</h2>
-        </div>
-        <div class="grid cols-2">
-          <div class="form-group mb-0" data-print="hide">
-            <label class="form-label" for="list">Punkte der Klasse</label>
-            <textarea class="form-textarea" id="list" rows="10" spellcheck="false" autocomplete="off" aria-describedby="list-hint" placeholder="Anna 11,5&#10;Ben 9&#10;Cem 12"></textarea>
-            <span class="form-hint" id="list-hint">Eine Person pro Zeile, mit oder ohne Namen. Du kannst auch Spalten aus Excel einfügen. Die Liste bleibt in deinem Browser und wird nirgends gespeichert.</span>
-          </div>
-
-          <div>
-            <p class="text-muted" id="class-empty">Sobald du Punkte einfügst, erscheinen hier Durchschnitt und Notenspiegel.</p>
-            <div id="class-stats" hidden>
-              <div class="metric-group">
-                <div class="metric compact">
-                  <span class="metric-label">Teilnehmende</span>
-                  <span class="metric-value" id="c-count"></span>
-                </div>
-                <div class="metric compact">
-                  <span class="metric-label">Ø Note</span>
-                  <span class="metric-value" id="c-grade"></span>
-                </div>
-                <div class="metric compact">
-                  <span class="metric-label">Ø Anteil</span>
-                  <span class="metric-value" id="c-share"></span>
-                  <span class="metric-trend"><span class="metric-context" id="c-points"></span></span>
-                </div>
-                <div class="metric compact">
-                  <span class="metric-label">Note 4 oder besser</span>
-                  <span class="metric-value" id="c-passed"></span>
-                  <span class="metric-trend"><span class="metric-context" id="c-passed-of"></span></span>
-                </div>
+        <details class="collapsible" id="method" data-print="hide">
+          <summary>
+            <span>So wird gerechnet</span>
+            <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+          </summary>
+          <div class="collapsible-inner">
+            <div class="grid cols-2">
+              <div class="prose">
+                <p>Grundlage ist der Bewertungsschlüssel in § 24 der <a href="https://www.bibb.de/dokumente/pdf/HA120.pdf">Musterprüfungsordnung für Abschluss- und Umschulungsprüfungen</a> (Richtlinie des BIBB-Hauptausschusses vom 07.10.2025). Er gilt für IHK-Prüfungen und ist auf 100&nbsp;Punkte festgelegt, also auf Prozent.</p>
+                <p>Die Note richtet sich nach dem Prozentwert: „sehr gut“ ab 92&nbsp;%, „gut“ ab 81&nbsp;%, „befriedigend“ ab 67&nbsp;%, „ausreichend“ ab 50&nbsp;%, „mangelhaft“ ab 30&nbsp;%.</p>
+                <p>Die untere Prozentgrenze gehört zur Note, die obere nicht: „81 – unter 92“ heißt, 92&nbsp;% sind schon „sehr gut“. Nur 100&nbsp;% gehören noch zur obersten Zeile.</p>
+                <p>Für die Punktspalte wird jede Grenze auf den nächsten halben Punkt, ganzen Punkt oder Hundertstelpunkt <strong>aufgerundet</strong>. Bei 13&nbsp;Punkten sind 92&nbsp;% genau 11,96&nbsp;Punkte: in halben Punkten gibt es „sehr gut“ ab 12, auf 0,01 genau ab 11,96&nbsp;Punkten.</p>
+                <p>Punkte mit mehr Nachkommastellen ordnet der genaue Prozentwert ein: 11,97 von 13&nbsp;Punkten sind 92,07&nbsp;%, also „sehr gut“. Prozentwerte werden auf zwei Nachkommastellen abgerundet angezeigt, 91,996&nbsp;% erscheinen als 91,99&nbsp;%.</p>
+                <p>Zusatzpunkte verschieben keine Grenze, sie verlängern nur „sehr gut“ nach oben.</p>
+                <p>Die Dezimalnote stammt aus der Tabelle in § 24, die jedem ganzen Prozentpunkt eine Note von 1,0 bis 6,0 zuordnet. Dafür wird der Prozentwert abgerundet. Innerhalb einer Note steigt sie in fast gleichen Schritten. Die Noten umfassen aber unterschiedlich viele Prozentpunkte, von 9 bei „sehr gut“ bis 30 bei „ungenügend“.</p>
               </div>
-              <h3 class="chart-title">Notenspiegel</h3>
-              <p class="chart-subtitle" id="c-chart-subtitle"></p>
-              <div class="bar-chart" role="img" id="c-chart"></div>
-              <details class="chart-data">
-                <summary>Daten als Tabelle</summary>
-                <table class="data-table compact">
-                  <caption class="visually-hidden">Notenspiegel</caption>
-                  <thead><tr><th scope="col">Note</th><th scope="col" class="numeric">Anzahl</th><th scope="col" class="numeric">Anteil</th></tr></thead>
-                  <tbody id="c-chart-body"></tbody>
-                </table>
-              </details>
+              <div class="prose">
+                <h3>Link mit Werten teilen</h3>
+                <p>Die Adresse der Seite enthält die aktuellen Eingaben, aber nie den Namen.</p>
+                <dl class="kv">
+                  <dt><code>max</code></dt><dd>Höchstpunktzahl, ohne Angabe 100</dd>
+                  <dt><code>p</code></dt><dd>erreichte Punkte</dd>
+                  <dt><code>step</code></dt><dd><code>1</code> für ganze Punkte, <code>0.01</code> für Hundertstel, ohne Angabe halbe Punkte</dd>
+                  <dt><code>bonus</code></dt><dd>Zusatzpunkte</dd>
+                  <dt><code>title</code></dt><dd>Titel der Prüfung</dd>
+                </dl>
+                <p>Beispiele:</p>
+                <ul id="examples"></ul>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div class="alert warning mt-5" role="status" id="class-skipped" hidden>
-          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
-          <div>
-            <span class="alert-title" id="class-skipped-title"></span>
-            <ul id="class-skipped-list"></ul>
-          </div>
-        </div>
-
-        <div class="card flush mt-5" id="class-results" hidden>
-          <div class="card-header">
-            <h3 class="card-title">Ergebnisse</h3>
-            <button class="btn secondary small" type="button" id="copy-list">
-              <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-              Liste kopieren
-            </button>
-          </div>
-          <div class="table-scroll sticky">
-            <table class="data-table" id="class-table">
-              <caption class="visually-hidden">Ergebnisse der Klasse</caption>
-              <thead>
-                <tr>
-                  <th scope="col" class="numeric">Nr.</th>
-                  <th scope="col">Name</th>
-                  <th scope="col" class="numeric">Punkte</th>
-                  <th scope="col" class="numeric">Anteil</th>
-                  <th scope="col" class="center">Note</th>
-                  <th scope="col" class="numeric">Dezimalnote</th>
-                </tr>
-              </thead>
-              <tbody id="c-rows"></tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="method-title" data-print="hide">
-        <div class="section-header">
-          <h2 id="method-title">So wird gerechnet</h2>
-        </div>
-        <div class="grid cols-2">
-          <div class="prose">
-            <p>Grundlage ist der Bewertungsschlüssel in § 24 der <a href="https://www.bibb.de/dokumente/pdf/HA120.pdf">Musterprüfungsordnung für Abschluss- und Umschulungsprüfungen</a> (Richtlinie des BIBB-Hauptausschusses vom 07.10.2025). Er gilt für alle IHK-Prüfungen und ist auf 100&nbsp;Punkte festgelegt.</p>
-            <p>Für eine andere Höchstpunktzahl braucht jede Note denselben Anteil: „sehr gut“ ab 92&nbsp;%, „gut“ ab 81&nbsp;%, „befriedigend“ ab 67&nbsp;%, „ausreichend“ ab 50&nbsp;% und „mangelhaft“ ab 30&nbsp;%.</p>
-            <p>Jede Grenze wird auf den nächsten halben oder ganzen Punkt <strong>aufgerundet</strong>. Beispiel mit 13&nbsp;Punkten: 92&nbsp;% sind 11,96&nbsp;Punkte, „sehr gut“ gibt es also ab 12&nbsp;Punkten. So bekommt niemand eine Note, deren Anteil nicht erreicht ist.</p>
-            <p>Zusatzpunkte verschieben keine Grenze, sie verlängern nur „sehr gut“ nach oben. Die IHK-Dezimalnote stammt aus derselben Tabelle in § 24. Dafür wird der Anteil auf ganze IHK-Punkte abgerundet.</p>
-          </div>
-          <div class="prose">
-            <h3>Link mit Werten teilen</h3>
-            <p>Die Adresse der Seite enthält immer die aktuellen Eingaben. Mit „Link kopieren“ teilst du den Notenschlüssel oder ein einzelnes Ergebnis.</p>
-            <dl class="kv">
-              <dt><code>max</code></dt><dd>Höchstpunktzahl, ohne Angabe 100</dd>
-              <dt><code>p</code></dt><dd>erreichte Punkte</dd>
-              <dt><code>step</code></dt><dd><code>1</code> für ganze Punkte, ohne Angabe halbe Punkte</dd>
-              <dt><code>bonus</code></dt><dd>Zusatzpunkte</dd>
-            </dl>
-            <p>Beispiele:</p>
-            <ul id="examples"></ul>
-          </div>
-        </div>
+        </details>
       </section>
     </main>
   </div>

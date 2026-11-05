@@ -1,6 +1,6 @@
 /* ================================================================
    B3 Schulportal Styleguide — style.css
-   Version 6.2 · light + dark · school blue + IT green
+   Version 6.3 · light + dark (default: follows the system) · school blue + IT green
 
    The one stylesheet for standalone B3 web apps. Documentation,
    markup contracts and rules: STYLEGUIDE.md. Living demo: index.html.
@@ -14,8 +14,10 @@
 
    Brands:  default = school-wide BLUE (b3-fuerth.de logo #0085bf)
             <html data-brand="it"> = IT-department GREEN variant
-   Themes:  default = light · <html data-theme="dark"> = dark
-            (dark is screen-only: printing always uses the light tokens)
+   Themes:  <html data-theme="light|dark"> — b3.js resolves the user's
+            preference (system by default, or light/dark) into this
+            attribute, so no prefers-color-scheme query is needed here.
+            Dark is screen-only: printing always uses the light tokens.
 
    App code never writes raw hex values — only these tokens.
    UI embedded in Mebis/WebUntis/Oncoo uses mebis/b3-mebis.css instead.

@@ -1,11 +1,14 @@
 /* ================================================================
    app.css — Notenrechner additions on top of style.css (unchanged).
-   Tokens only; no new class names, only attribute hooks set by app.js.
+   Tokens only; no new class names, only ids and attribute hooks.
+
+   Grades are shown in ink, without traffic-light colors: a grade is
+   information about the work, not a verdict on the person.
    ================================================================ */
 
-/* The row matching the entered score. Like the current nav item:
-   bold + an ink bar, plus the „Ergebnis“ badge in the row, so it never
-   relies on color. aria-current lets screen readers announce it. */
+/* The row matching the entered score: bold + an ink bar like the
+   current nav item, plus the „Ergebnis“ badge, so it never relies on
+   color. aria-current lets screen readers announce it. */
 .data-table tbody tr[aria-current="true"] {
   background: var(--color-hover);
 }
@@ -18,18 +21,42 @@
   box-shadow: inset 3px 0 0 var(--color-text);
 }
 
-/* Key table: a narrow grade column, the words take the slack, so the
-   point columns sit together on the right. */
+/* Key table: narrow grade column, the grade word takes the slack */
 #key-table thead th:first-child {
-  width: 5rem;
+  width: 4rem;
 }
 
-#key-table thead th:nth-child(2) {
-  width: 40%;
+#key-table thead th:nth-child(n+3) {
+  width: 11rem;
 }
 
-#class-table thead th:nth-child(2) {
-  width: 40%;
+/* Ranges "12 – 13" and "81 – unter 92": fixed sides around the dash,
+   so the dashes line up down the column */
+[data-range] {
+  display: inline-grid;
+  grid-template-columns: 6ch auto 6ch;
+  column-gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+[data-range] > :first-child {
+  text-align: right;
+}
+
+[data-range] > :last-child {
+  text-align: left;
+}
+
+#key-body td:last-child [data-range] {
+  grid-template-columns: 3.5ch auto 8.5ch;
+}
+
+/* List of skipped entries inside the warning alert */
+#class-skipped-list {
+  margin-top: var(--space-1);
+  padding-left: var(--space-5);
+  list-style: disc;
 }
 
 /* Phones: the key table fits without sideways scrolling */
@@ -40,36 +67,35 @@
   }
 
   #key-table thead th {
-    white-space: normal;
-  }
-
-  #key-table thead th:first-child,
-  #key-table thead th:nth-child(2) {
     width: auto;
   }
+
+  [data-range] {
+    grid-template-columns: 4.5ch auto 4.5ch;
+    column-gap: var(--space-1);
+  }
+
+  #key-body td:last-child [data-range] {
+    grid-template-columns: 3ch auto 7ch;
+  }
 }
 
-/* Grades that no score can reach (very small maxima) */
-.data-table tbody tr[data-reachable="false"] > :not(:first-child) {
-  color: var(--color-text-muted);
-}
-
-/* List of skipped lines inside the warning alert */
-#class-skipped-list {
-  margin-top: var(--space-1);
-  padding-left: var(--space-5);
-  list-style: disc;
+/* Print: a sheet with title, name and result on top, then the key.
+   Inputs, help and closed panels stay off the paper. */
+[data-print="only"] {
+  display: none;
 }
 
 @media print {
-  /* Print the key (its heading names max and step) and, if filled in,
-     the class results — not the inputs, the help text or closed panels. */
+  [data-print="only"] {
+    display: block;
+  }
+
   [data-print="hide"],
   details.collapsible:not([open]) {
     display: none !important;
   }
 
-  /* Print long tables completely instead of a scrolling window */
   .table-scroll.sticky {
     max-height: none;
     overflow: visible;

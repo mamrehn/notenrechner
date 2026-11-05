@@ -4,14 +4,16 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const G = require('../grading.js');
 
+const S = (max, step = 0.5, bonus = 0) => ({ max, step, bonus });
 const lows = (scale) => scale.map((b) => b.from);
 const ranges = (scale) => scale.map((b) => (b.reachable ? [b.from, b.to] : null));
+const percentRanges = (scale) => scale.map((b) => [b.percentFrom, b.percentTo, b.percentToIncluded]);
 
 test('100 points reproduce the official IHK key (§ 24 MPO)', () => {
-  const whole = G.buildScale({ max: 100, step: 1, bonus: 0 });
-  assert.deepEqual(ranges(whole), [[92, 100], [81, 91], [67, 80], [50, 66], [30, 49], [0, 29]]);
-  const half = G.buildScale({ max: 100, step: 0.5, bonus: 0 });
-  assert.deepEqual(ranges(half), [[92, 100], [81, 91.5], [67, 80.5], [50, 66.5], [30, 49.5], [0, 29.5]]);
+  assert.deepEqual(ranges(G.buildScale(S(100, 1))), [[92, 100], [81, 91], [67, 80], [50, 66], [30, 49], [0, 29]]);
+  assert.deepEqual(ranges(G.buildScale(S(100, 0.5))), [[92, 100], [81, 91.5], [67, 80.5], [50, 66.5], [30, 49.5], [0, 29.5]]);
+  // lower bound included, upper bound excluded ("81 – unter 92"), only 100 % included
+  assert.deepEqual(percentRanges(G.buildScale(S(100))), [[92, 100, true], [81, 92, false], [67, 81, false], [50, 67, false], [30, 50, false], [0, 30, false]]);
   assert.deepEqual(G.KEY.map((b) => b.word), ['sehr gut', 'gut', 'befriedigend', 'ausreichend', 'mangelhaft', 'ungenügend']);
 });
 
@@ -19,123 +21,137 @@ test('decimal grades follow § 24 MPO and agree with the grade bands', () => {
   const expected = { 100: 1.0, 99: 1.1, 98: 1.1, 93: 1.4, 92: 1.4, 91: 1.5, 86: 2.0, 85: 2.0, 81: 2.4, 80: 2.5, 79: 2.5,
     76: 2.8, 73: 3.0, 67: 3.4, 66: 3.5, 61: 3.8, 57: 4.0, 50: 4.4, 49: 4.5, 31: 5.4, 30: 5.4, 29: 5.5, 25: 5.5,
     24: 5.6, 15: 5.7, 14: 5.8, 9: 5.9, 5: 5.9, 4: 6.0, 0: 6.0 };
-  for (const [points, decimal] of Object.entries(expected)) assert.equal(G.decimalForIhkPoints(Number(points)), decimal, points + ' IHK-Punkte');
+  for (const [percent, decimal] of Object.entries(expected)) assert.equal(G.decimalForPercent(Number(percent)), decimal, percent + ' %');
   let previous = 0;
   for (let p = 100; p >= 0; p--) {
-    const decimal = G.decimalForIhkPoints(p);
+    const decimal = G.decimalForPercent(p);
     assert.ok(decimal >= previous, 'monotone at ' + p);
-    assert.equal(Math.round(decimal), G.bandForIhkPoints(p).grade, 'band of ' + p + ' IHK-Punkte');
+    assert.equal(Math.round(decimal), G.bandForPercent(p).grade, 'band of ' + p + ' %');
     previous = decimal;
   }
+  assert.equal(G.decimalForPercent(91.96), 1.5, 'rounded down, not up');
 });
 
-test('thresholds are rounded up to the step, never down', () => {
+test('table bounds are rounded up to the grid, never down', () => {
   // 13 points: 92 % = 11,96 · 81 % = 10,53 · 67 % = 8,71 · 50 % = 6,5 · 30 % = 3,9
-  assert.deepEqual(lows(G.buildScale({ max: 13, step: 0.5, bonus: 0 })), [12, 11, 9, 6.5, 4, 0]);
-  assert.deepEqual(lows(G.buildScale({ max: 13, step: 1, bonus: 0 })), [12, 11, 9, 7, 4, 0]);
-  // The old version rounded to the nearest half point and gave a 3 for 8,5 of 13 (65 %)
-  assert.equal(G.evaluate(8.5, { max: 13, step: 0.5, bonus: 0 }).grade, 4);
-  // Exact percentages stay exact (no floating point drift: 0.92 * 100 = 92.00000000000001)
-  assert.deepEqual(lows(G.buildScale({ max: 50, step: 0.5, bonus: 0 })), [46, 40.5, 33.5, 25, 15, 0]);
+  assert.deepEqual(lows(G.buildScale(S(13, 0.5))), [12, 11, 9, 6.5, 4, 0]);
+  assert.deepEqual(lows(G.buildScale(S(13, 1))), [12, 11, 9, 7, 4, 0]);
+  // The first version rounded to the nearest half point and gave a 3 for 8,5 of 13 (65 %)
+  assert.equal(G.evaluate(8.5, S(13)).grade, 4);
+  // No floating point drift: 0.92 * 100 = 92.00000000000001
+  assert.deepEqual(lows(G.buildScale(S(50, 0.5))), [46, 40.5, 33.5, 25, 15, 0]);
 });
 
-test('every score in every scale gets the grade of its percentage', () => {
-  for (const step of G.STEPS) {
+test('hundredths (mebis default) give the exact percent bounds', () => {
+  const scale = G.buildScale(S(13, 0.01));
+  assert.deepEqual(lows(scale), [11.96, 10.53, 8.71, 6.5, 3.9, 0]);
+  assert.deepEqual(ranges(scale).slice(0, 2), [[11.96, 13], [10.53, 11.95]], 'no 11.950000000000001');
+  assert.deepEqual(lows(G.buildScale(S(17, 0.01))), [15.64, 13.77, 11.39, 8.5, 5.1, 0]);
+});
+
+test('every grid score lies in the table row of its grade', () => {
+  for (const step of [0.5, 1]) {
     for (let max = step; max <= 120; max += step) {
-      const settings = { max, step, bonus: 0 };
+      const settings = S(max, step);
       const scale = G.buildScale(settings);
       for (let units = 0; units * step <= max; units++) {
         const points = units * step;
         const r = G.evaluate(points, settings, scale);
-        const percent = (points * 100) / max;
-        const band = G.KEY.find((b) => percent >= b.min - 1e-9);
-        assert.equal(r.grade, band.grade, `${points}/${max} (Schritt ${step})`);
-        assert.equal(G.bandForIhkPoints(r.ihkPoints).grade, r.grade, `IHK-Punkte ${points}/${max}`);
-        const row = scale[r.grade - 1];
-        assert.ok(row.reachable && points >= row.from && points <= row.to, `Zeile ${points}/${max}`);
+        assert.equal(r.grade, G.bandForPercent(r.wholePercent).grade, `${points}/${max} (Schritt ${step})`);
+        assert.ok(r.onTable, `Zeile ${points}/${max}`);
       }
+    }
+  }
+  for (const max of [13, 17.5, 40, 99.99]) {
+    const settings = S(max, 0.01);
+    const scale = G.buildScale(settings);
+    for (let units = 0; units <= Math.round(max * 100); units++) {
+      const r = G.evaluate(units / 100, settings, scale);
+      assert.ok(r.onTable, `Zeile ${units / 100}/${max} (Schritt 0,01)`);
     }
   }
 });
 
-test('tiny maxima leave some grades unreachable', () => {
-  const scale = G.buildScale({ max: 2, step: 1, bonus: 0 });
-  assert.deepEqual(scale.map((b) => b.reachable), [true, false, false, true, false, true]);
-  assert.equal(G.evaluate(2, { max: 2, step: 1, bonus: 0 }).grade, 1);
-  assert.equal(G.evaluate(1, { max: 2, step: 1, bonus: 0 }).grade, 4);
+test('decimal scores (mebis) are graded by their exact percentage', () => {
+  const r1 = G.evaluate(11.97, S(13));            // 92,08 %
+  assert.equal(r1.grade, 1);
+  assert.equal(r1.onTable, false, 'between the ranges 11–11,5 and 12–13');
+  const r2 = G.evaluate(11.95, S(13));            // 91,92 %
+  assert.equal(r2.grade, 2);
+  assert.equal(r2.decimal, 1.5);
+  const r3 = G.evaluate(13.353, S(15));           // 89,02 %
+  assert.equal(r3.grade, 2);
+  assert.equal(r3.wholePercent, 89);
+  assert.equal(r3.decimal, 1.7);
+  assert.equal(G.floorTo(r3.percent, 1), 89);
+  assert.equal(G.evaluate(11.2, S(13)).onTable, true, 'inside 11–11,5');
+  assert.equal(G.floorTo(G.percentOf(11.9599, 13), 2), 91.99, 'display never rounds up into the next grade');
 });
 
-test('bonus points extend the top band, thresholds stay on the maximum', () => {
-  const settings = { max: 30, step: 0.5, bonus: 3 };
+test('tiny maxima leave some grid ranges empty', () => {
+  const scale = G.buildScale(S(2, 1));
+  assert.deepEqual(scale.map((b) => b.reachable), [true, false, false, true, false, true]);
+  assert.equal(G.evaluate(2, S(2, 1)).grade, 1);
+  assert.equal(G.evaluate(1, S(2, 1)).grade, 4);
+  assert.equal(G.evaluate(1.7, S(2, 1)).grade, 2, 'decimals still reach "gut"');
+});
+
+test('bonus points extend the top range, bounds stay on the maximum', () => {
+  const settings = S(30, 0.5, 3);
   const scale = G.buildScale(settings);
   assert.deepEqual(ranges(scale)[0], [28, 33]);
-  assert.deepEqual(lows(scale), lows(G.buildScale({ max: 30, step: 0.5, bonus: 0 })));
+  assert.deepEqual(percentRanges(scale)[0], [92, 110, true]);
+  assert.deepEqual(lows(scale), lows(G.buildScale(S(30))));
   const r = G.evaluate(33, settings);
   assert.equal(r.grade, 1);
-  assert.equal(r.ihkPoints, 100);
+  assert.equal(r.wholePercent, 100);
   assert.equal(r.decimal, 1.0);
-  assert.ok(r.share > 1);
-});
-
-test('points missing for the next better grade', () => {
-  const settings = { max: 13, step: 0.5, bonus: 0 };
-  assert.equal(G.evaluate(11.5, settings).missing, 0.5);
-  assert.equal(G.evaluate(11.5, settings).better.grade, 1);
-  assert.equal(G.evaluate(13, settings).better, null);
-  // skips unreachable grades: with 2 points max, 1 point (4) → next is 1
-  assert.equal(G.evaluate(1, { max: 2, step: 1, bonus: 0 }).better.grade, 1);
 });
 
 test('input validation', () => {
   assert.equal(G.parseNumber('11,5'), 11.5);
+  assert.equal(G.parseNumber('13,353'), 13.353);
+  assert.equal(G.parseNumber('14.23'), 14.23);
+  assert.equal(G.parseNumber(',5'), 0.5);
   assert.equal(G.parseNumber(' 12 '), 12);
-  assert.ok(Number.isNaN(G.parseNumber('')));
-  assert.ok(Number.isNaN(G.parseNumber('-3')));
-  assert.ok(Number.isNaN(G.parseNumber('1.000,5')));
-  assert.deepEqual(G.checkSettings({ max: 40, step: 0.5, bonus: 0 }), {});
-  assert.ok(G.checkSettings({ max: 0, step: 0.5, bonus: 0 }).max);
-  assert.ok(G.checkSettings({ max: 13.25, step: 0.5, bonus: 0 }).max);
-  assert.ok(G.checkSettings({ max: 13.5, step: 1, bonus: 0 }).max);
-  assert.ok(G.checkSettings({ max: 13, step: 1, bonus: 0.5 }).bonus);
-  const s = { max: 13, step: 1, bonus: 0 };
-  assert.equal(G.checkPoints(12, s), null);
-  assert.match(G.checkPoints(11.5, s), /Halbe Punkte/);
-  assert.match(G.checkPoints(14, s), /Mehr als 13/);
-  assert.equal(G.checkPoints(14, { max: 13, step: 1, bonus: 1 }), null);
+  for (const bad of ['', '-3', 'abc', '1.000,5', '11 12', '1,2,3']) assert.ok(Number.isNaN(G.parseNumber(bad)), bad);
+  assert.deepEqual(G.checkSettings(S(40)), {});
+  assert.deepEqual(G.checkSettings(S(13.333, 1)), {}, 'decimal maxima are fine');
+  assert.ok(G.checkSettings(S(0)).max);
+  assert.ok(G.checkSettings({ max: 13, step: 1, bonus: -1 }).bonus);
+  assert.equal(G.checkPoints(13.353, S(15)), null);
+  assert.match(G.checkPoints(14, S(13)), /Mehr als 13 Punkte.*Zusatzpunkte/);
+  assert.equal(G.checkPoints(14, S(13, 1, 1)), null);
 });
 
-test('class lists: names, separators and units', () => {
-  const { entries, skipped } = G.parseList([
-    'Name;Punkte',
-    'Anna Schmidt\t11,5',
-    'Ben: 9',
-    'Cem;12.5',
-    'Dana, 7 Punkte',
-    '',
-    '10 8,5; 6',
-    '3, 4,5, 2'
-  ].join('\n'));
-  assert.deepEqual(entries.map((e) => [e.name, e.points]), [
-    ['Anna Schmidt', 11.5], ['Ben', 9], ['Cem', 12.5], ['Dana', 7],
-    ['', 10], ['', 8.5], ['', 6], ['', 3], ['', 4.5], ['', 2]
-  ]);
-  assert.deepEqual(skipped.map((s) => s.line), [1]);
+test('class lists: points only, separators, alignment', () => {
+  const line = G.evaluateList('11,5\n\n13,353\nAnna 9\n20\n7\n\n', S(15), 'line');
+  assert.deepEqual(line.rows.map((r) => [r.position, r.points, r.grade]), [[1, 11.5, 3], [3, 13.353, 2], [6, 7, 5]]);
+  assert.deepEqual(line.skipped.map((s) => s.position), [4, 5]);
+  assert.match(line.skipped[0].reason, /ohne Namen/);
+  assert.equal(line.empty, 1);
+  assert.equal(line.gradesText, '3\n\n2\n\n\n5', 'same rows as the input, trailing empty lines dropped');
+
+  const semi = G.evaluateList('11,5;12;;9\n8', S(13), 'semicolon');
+  assert.deepEqual(semi.rows.map((r) => r.points), [11.5, 12, 9, 8]);
+  assert.equal(semi.gradesText, '2;1;;3\n4');
+
+  const comma = G.evaluateList('11.5, 12, 9', S(13), 'comma');
+  assert.deepEqual(comma.rows.map((r) => r.points), [11.5, 12, 9]);
+
+  const tabs = G.evaluateList('11,5\t\t9\n7 8', S(13), 'space');
+  assert.deepEqual(tabs.rows.map((r) => [r.position, r.points]), [[1, 11.5], [3, 9], [4, 7], [5, 8]]);
+  assert.equal(tabs.gradesText, '2\t\t3\n4\t4');
+
+  const multi = G.evaluateList('11 12', S(13), 'line');
+  assert.match(multi.skipped[0].reason, /Trennzeichen/);
 });
 
 test('class statistics', () => {
-  const result = G.evaluateList('Anna 13\nBen 11,5\nCem 6\nDana 20\nEmil 9,25', { max: 13, step: 0.5, bonus: 0 });
-  assert.deepEqual(result.rows.map((r) => r.grade), [1, 2, 5]);
-  assert.deepEqual(result.skipped.map((s) => s.line), [4, 5]);
+  const result = G.evaluateList('13\n11,5\n6', S(13));
   assert.equal(result.stats.count, 3);
   assert.equal(result.stats.passed, 2);
   assert.deepEqual(result.stats.distribution, [1, 1, 0, 0, 1, 0]);
   assert.ok(Math.abs(result.stats.averageGrade - 8 / 3) < 1e-12);
-  assert.equal(G.evaluateList('', { max: 13, step: 0.5, bonus: 0 }).stats, null);
-});
-
-test('every score listed for the lookup table', () => {
-  const rows = G.allScores({ max: 13, step: 0.5, bonus: 1 });
-  assert.equal(rows.length, 29);
-  assert.equal(rows[0].points, 14);
-  assert.equal(rows.at(-1).points, 0);
+  assert.equal(G.evaluateList('', S(13)).stats, null);
 });

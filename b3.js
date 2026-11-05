@@ -1,6 +1,6 @@
 /* ================================================================
    B3 Schulportal Styleguide — b3.js
-   Version 6.0 · optional, dependency-free behaviors for style.css
+   Version 6.3 · optional, dependency-free behaviors for style.css
 
    <script src="b3.js" defer></script>
 
@@ -11,12 +11,18 @@
    Public API (window.B3):
      B3.toast(type, message, { duration })   'success'|'error'|'warning'|'info'
      B3.confirm({ title, message, confirmLabel, cancelLabel, danger }) → Promise<boolean>
-     B3.setTheme('light'|'dark')              persisted in localStorage 'b3-theme'
+     B3.setTheme('system'|'light'|'dark')     persisted in localStorage 'b3-theme'
+     B3.getTheme() → 'system'|'light'|'dark'  the stored preference (default 'system')
      B3.fmt.date / time / dateTime / number / percent / bytes / duration
      B3.init(root)
 
-   To avoid a flash of the light theme, put this in <head> as well:
-     <script>try{document.documentElement.dataset.theme=localStorage.getItem('b3-theme')||'light'}catch(e){}</script>
+   Theme preference: 'system' (default, follows prefers-color-scheme
+   live), 'light' or 'dark'. <html data-theme> always holds the resolved
+   'light'|'dark', so style.css needs no media query. The header button
+   [data-b3-theme-toggle] cycles automatisch → hell → dunkel and shows
+   the current preference as icon and title. To avoid a flash of the
+   wrong theme, put this in <head> before the stylesheet:
+     <script>try{var t=localStorage.getItem('b3-theme');document.documentElement.dataset.theme=t==='light'||t==='dark'?t:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}catch(e){}</script>
    ================================================================ */
 (function () {
   'use strict';
@@ -58,12 +64,50 @@
   };
 
   /* --- Theme ------------------------------------------------------ */
-  function setTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    store.set('b3-theme', theme);
-    document.querySelectorAll('[data-b3-theme-toggle]').forEach((btn) =>
-      btn.setAttribute('aria-pressed', String(theme === 'dark')));
+  // Preference 'system' | 'light' | 'dark'; data-theme gets the resolved value.
+  const darkQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  const THEMES = ['system', 'light', 'dark'];   // cycle order of the toggle button
+  const THEME_LABELS = { system: 'automatisch', light: 'hell', dark: 'dunkel' };
+  // Line icons (stroke, not fill): half-filled circle, sun, moon
+  const THEME_ICONS = {
+    system: 'M12 3a9 9 0 1 0 0 18zm0 0a9 9 0 0 1 0 18',
+    light: 'M12 5.5v-3m0 19v-3m6.5-6.5h3m-19 0h3m11.1-4.6 2.1-2.1M5.3 18.7l2.1-2.1m0-9.2L5.3 5.3m13.4 13.4-2.1-2.1M12 8a4 4 0 1 1 0 8 4 4 0 0 1 0-8',
+    dark: 'M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5'
+  };
+  const themeIcon = (preference) =>
+    '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false"><path d="' + THEME_ICONS[preference] +
+    '" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
+  function getTheme() {
+    const stored = store.get('b3-theme');
+    return stored === 'light' || stored === 'dark' ? stored : 'system';
   }
+
+  function resolveTheme(preference) {
+    if (preference === 'light' || preference === 'dark') return preference;
+    return darkQuery && darkQuery.matches ? 'dark' : 'light';
+  }
+
+  function applyTheme(preference) {
+    const theme = resolveTheme(preference);
+    document.documentElement.setAttribute('data-theme', theme);
+    // Not a two-state toggle: no aria-pressed; the title names the current mode
+    document.querySelectorAll('[data-b3-theme-toggle]').forEach((btn) => {
+      btn.innerHTML = themeIcon(preference);
+      btn.title = 'Farbschema: ' + THEME_LABELS[preference];
+      btn.setAttribute('aria-label', 'Farbschema wechseln');
+      btn.removeAttribute('aria-pressed');
+    });
+  }
+
+  function setTheme(preference) {
+    if (!THEMES.includes(preference)) preference = 'system';
+    store.set('b3-theme', preference);
+    applyTheme(preference);
+  }
+
+  // Follow the operating system live while the preference is 'system'
+  darkQuery?.addEventListener?.('change', () => { if (getTheme() === 'system') applyTheme('system'); });
 
   /* --- Toasts ----------------------------------------------------- */
   function toastRegion() {
@@ -179,13 +223,12 @@
       if (!once(btn)) return;
       btn.addEventListener('click', () => btn.closest('.pill').remove());
     });
-    // Theme toggles
+    // Theme button: cycles automatisch → hell → dunkel (v6.2 markup with the moon icon works too)
     root.querySelectorAll('[data-b3-theme-toggle]').forEach((btn) => {
       if (!once(btn)) return;
-      btn.setAttribute('aria-pressed', String(document.documentElement.getAttribute('data-theme') === 'dark'));
-      btn.addEventListener('click', () =>
-        setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+      btn.addEventListener('click', () => setTheme(THEMES[(THEMES.indexOf(getTheme()) + 1) % THEMES.length]));
     });
+    applyTheme(getTheme());
     // Dialog openers: <button data-open-dialog="id">
     root.querySelectorAll('[data-open-dialog]').forEach((btn) => {
       if (!once(btn)) return;
@@ -328,13 +371,12 @@
     initQuiz(root);
   }
 
-  // Apply the stored theme before first paint where possible
-  const stored = store.get('b3-theme');
-  if (stored && !document.documentElement.hasAttribute('data-theme')) {
-    document.documentElement.setAttribute('data-theme', stored);
+  // Apply the theme before first paint where possible (the <head> snippet does it earlier)
+  if (!document.documentElement.hasAttribute('data-theme')) {
+    document.documentElement.setAttribute('data-theme', resolveTheme(getTheme()));
   }
 
-  window.B3 = { init, toast, confirm: confirmDialog, setTheme, fmt };
+  window.B3 = { init, toast, confirm: confirmDialog, setTheme, getTheme, fmt };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => init());
   else init();

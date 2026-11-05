@@ -3,12 +3,15 @@
 Der IHK-Notenschlüssel, umgerechnet auf jede Höchstpunktzahl:
 <https://mamrehn.github.io/notenrechner/>
 
-- Notengrenzen in **halben oder ganzen Punkten**
-- Note, Anteil und IHK-Dezimalnote zu einer erreichten Punktzahl
-- Tabelle mit der Note für jede mögliche Punktzahl
-- Klasse auswerten: Liste einfügen, Notenspiegel, Durchschnitt, Ergebnisliste für Excel
-- Zusatzpunkte (Bonusaufgaben)
-- Teilbare Links, Druckansicht, dunkles Design, funktioniert offline
+- Notengrenzen in **halben Punkten, ganzen Punkten oder auf 0,01 genau** (mebis), mit Punkt-
+  und Prozentbereich je Note
+- Note, Prozent und Dezimalnote zu einer erreichten Punktzahl, auch mit
+  Nachkommastellen (z. B. 13,353 aus mebis), Komma oder Punkt
+- Ergebnis **als Text kopieren** (für E-Mail oder Messenger) oder als Link teilen
+- Ausdruck mit Titel der Prüfung und optional dem Namen
+- Für Lehrkräfte: Klasse auswerten (nur Punkte, keine Namen), Notenspiegel,
+  Noten in derselben Reihenfolge zurück nach Excel kopieren
+- Zusatzpunkte, Farbschema automatisch / hell / dunkel (ein Knopf), funktioniert offline
 
 ## Grundlage
 
@@ -17,7 +20,7 @@ Abschluss- und Umschulungsprüfungen* (Richtlinie des Hauptausschusses des BIBB
 vom 07.10.2025, BAnz AT 07.11.2025 S3,
 [PDF](https://www.bibb.de/dokumente/pdf/HA120.pdf)):
 
-| Note | IHK-Punkte |
+| Note | Punkte von 100 |
 |---|---|
 | 1 sehr gut | 100–92 |
 | 2 gut | 91–81 |
@@ -26,35 +29,51 @@ vom 07.10.2025, BAnz AT 07.11.2025 S3,
 | 5 mangelhaft | 49–30 |
 | 6 ungenügend | 29–0 |
 
-Die Dezimalnoten (100 → 1,0, 92 → 1,4, 50 → 4,4 …) stammen aus derselben Tabelle.
+Die Dezimalnoten (100 → 1,0, 92 → 1,4, 50 → 4,4 …) stammen aus derselben
+Tabelle. Sie sind eine feste Zuordnung, keine Formel: Innerhalb einer Note steigt
+die Dezimalnote in fast gleichen Schritten, die Noten umfassen aber 9 („sehr
+gut“) bis 30 („ungenügend“) Prozentpunkte. Insgesamt ist das eine Kurve.
 
 ## Rechenweg
 
-Die Prüfungsordnung legt den Schlüssel auf ganze Punkte von 100 fest und regelt
-keine andere Höchstpunktzahl. Der Rechner verwendet deshalb diese Regel:
+Die Prüfungsordnung legt den Schlüssel nur für ganze Punkte von 100 fest. Für
+andere Höchstpunktzahlen gilt hier:
 
-1. Note *n* gibt es ab demselben Anteil wie im 100-Punkte-Schlüssel (92 %, 81 %,
-   67 %, 50 %, 30 %).
-2. Jede Grenze wird auf den nächsten halben bzw. ganzen Punkt **aufgerundet**.
-   Bei 13 Punkten: 92 % × 13 = 11,96, also „sehr gut“ ab 12 Punkten.
-   Niemand bekommt eine Note, deren Anteil nicht erreicht ist.
-3. Zusatzpunkte verschieben keine Grenze. Sie verlängern nur „sehr gut“ nach oben.
-4. Für die Dezimalnote wird der Anteil auf ganze IHK-Punkte abgerundet, passend
-   zu Regel 2.
+1. **Der Prozentwert entscheidet:** „sehr gut“ ab 92 %, „gut“ ab 81 % usw.
+2. **Prozentbereiche:** Die untere Grenze gehört zur Note, die obere nicht
+   („81 – unter 92“). Nur 100 % gehören noch zur obersten Zeile.
+3. **Punktbereiche der Tabelle:** Jede Untergrenze wird auf den nächsten halben
+   Punkt, ganzen Punkt oder Hundertstelpunkt aufgerundet. Bei 13 Punkten:
+   92 % × 13 = 11,96, also „sehr gut“ ab 12 (halbe Punkte) bzw. ab 11,96
+   (0,01). Für Punktzahlen in diesem Raster stimmen Tabelle und Prozentwert
+   immer überein.
+4. **Mehr Nachkommastellen** (z. B. 13,353): Der genaue Prozentwert ordnet ein.
+   11,97 von 13 sind 92,07 %, also „sehr gut“, obwohl die Punktspalte in halben
+   Punkten erst bei 12 beginnt. Die Seite weist in diesem Fall darauf hin.
+5. **Anzeige:** Prozentwerte werden auf zwei Nachkommastellen abgerundet
+   (91,996 % → 91,99 %), für die Dezimalnote auf ganze Prozent. Keine Anzeige
+   wirkt besser als das Ergebnis.
+6. Zusatzpunkte verschieben keine Grenze, sie verlängern nur „sehr gut“ nach oben.
 
 Bei 100 Punkten ergibt das genau die Tabelle oben.
+
+Noten werden ohne Ampelfarben gezeigt: Sie sind eine Information über die
+Leistung, kein Urteil über die Person. Die Seite enthält bewusst keine
+Lob- oder Defizit-Formulierungen (etwa „Dir fehlen noch …“).
 
 ## Links mit Werten
 
 | Parameter | Bedeutung |
 |---|---|
 | `max` | Höchstpunktzahl (Standard 100) |
-| `p` | erreichte Punkte (markiert die Zeile, zeigt die Note) |
-| `step` | `1` für ganze Punkte (Standard: halbe Punkte) |
+| `p` | erreichte Punkte, auch mit Nachkommastellen |
+| `step` | `1` für ganze Punkte, `0.01` für Hundertstel (Standard: halbe Punkte) |
 | `bonus` | Zusatzpunkte |
+| `title` | Titel der Prüfung |
 
-Beispiel: `?max=13&p=11.5`. Ältere Links mit `smax` (Höchstpunktzahl inklusive
-Zusatzpunkten) werden weiter gelesen.
+Beispiel: `?title=2.+Schulaufgabe&max=15&p=13.353`. Der Name steht nie in der
+Adresse und wird nirgends gespeichert. Ältere Links mit `smax` (Höchstpunktzahl
+inklusive Zusatzpunkten) werden weiter gelesen.
 
 ## Entwicklung
 
@@ -64,9 +83,9 @@ beliebigen statischen Server verwenden.
 | Datei | Inhalt |
 |---|---|
 | `grading.js` | Notenschlüssel und Rechenregeln (ohne DOM, getestet) |
-| `app.js` | Oberfläche, URL-Synchronisierung |
+| `app.js` | Oberfläche, URL-Synchronisierung, Kopieren, Druck |
 | `app.css` | wenige app-spezifische Regeln, nur Design-Tokens |
-| `style.css`, `b3.js`, `fonts/` | B3-Styleguide v6.2, **unverändert** übernommen |
+| `style.css`, `b3.js`, `fonts/` | B3-Styleguide v6.3, **unverändert** übernommen |
 
 Tests (Node ≥ 18):
 
