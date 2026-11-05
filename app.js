@@ -494,6 +494,7 @@
     const bars = [];
     const outlines = [];
     const labels = [];
+    const clips = [];
     stats.lean.forEach((b, i) => {
       const cx = slot * i + slot / 2;
       const x0 = cx - half;
@@ -522,7 +523,9 @@
           : [...(lowHeight >= 0 ? [x0, base] : []), ...lowEnd, cx, yFlat, x1, yFlat, x1, base];
         bars.push('<polygon class="lean-bar" points="' + pts(solid) + '"/>');
         bars.push('<polygon class="lean-tint" points="' + pts([xHigh, yFlat, xHigh, yHigh, cx, yFlat]) + '"/>');
-        bars.push('<path class="lean-top" d="M' + pts([xHigh, yHigh]) + 'L' + pts(lowEnd) + '"/>');
+        // Clipped to the bar's own box, so the line ends flush with its edges and the baseline
+        clips.push('<clipPath id="c-lean-clip-' + i + '"><rect x="' + round(x0) + '" y="0" width="' + barWidth + '" height="' + base + '"/></clipPath>');
+        bars.push('<path class="lean-top" clip-path="url(#c-lean-clip-' + i + ')" d="M' + pts([xHigh, yHigh]) + 'L' + pts(lowEnd) + '"/>');
         const xLow = left ? x1 : x0;                                   // dotted: the regular bar's top and its low-side edge
         outlines.push('<path class="flat-bar" d="M' + pts([x0, yFlat]) + 'H' + round(x1) +
           'M' + pts([xLow, base - Math.max(0, lowHeight)]) + 'V' + round(yFlat) + '"/>');
@@ -531,7 +534,7 @@
       bars.push('<text class="value-label" x="' + cx + '" y="' + round(base - top - 8) + '" text-anchor="middle">' + b.count + '</text>');
       labels.push('<text x="' + cx + '" y="' + (base + 24) + '" text-anchor="middle">' + b.grade + '</text>');
     });
-    return '<g class="series-1">' + bars.join('') + '</g>' + outlines.join('') +
+    return '<defs>' + clips.join('') + '</defs>' + '<g class="series-1">' + bars.join('') + '</g>' + outlines.join('') +
       '<line class="baseline" x1="0" x2="' + width + '" y1="' + base + '" y2="' + base + '"/>' +
       '<g class="axis">' + labels.join('') + '</g>';
   }
