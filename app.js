@@ -500,21 +500,32 @@
       const x1 = cx + half;
       const h = b.count * scale;              // flat height = count
       const rise = Math.tan((b.lean * Math.PI) / 4) * half;   // angle = lean × 45°
+      const slope = rise / half;
       const hLeft = h + rise;
       const hRight = h - rise;
-      if (b.count) {
-        let points;
-        if (hRight < 0) points = [x0, base, x0, base - hLeft, cx + h / b.lean, base];        // cut at the baseline
-        else if (hLeft < 0) points = [cx - h / -b.lean, base, x1, base - hRight, x1, base];
-        else points = [x0, base, x0, base - hLeft, x1, base - hRight, x1, base];
-        bars.push('<polygon class="lean-bar" points="' + points.map(round).join(' ') + '"/>');
-        if (Math.abs(rise) >= 0.5) {
-          const yFlat = base - h;
-          const xLow = rise > 0 ? x1 : x0;                      // the side whose corner sits below the flat top
-          const yLow = base - Math.max(0, rise > 0 ? hRight : hLeft);
-          outlines.push('<path class="flat-bar" d="M' + round(x0) + ' ' + round(yFlat) + 'H' + round(x1) +
-            'M' + round(xLow) + ' ' + round(yLow) + 'V' + round(yFlat) + '"/>');
-        }
+      const yFlat = base - h;
+      const pts = (list) => list.map(round).join(' ');
+      if (b.count && Math.abs(rise) < 0.5) {
+        bars.push('<polygon class="lean-bar" points="' + pts([x0, base, x0, yFlat, x1, yFlat, x1, base]) + '"/>');
+      } else if (b.count) {
+        // The top pivots at the middle (cx, yFlat). Solid: the bar up to the flat top on the
+        // high side and up to the tilted top on the low side (cut at the baseline if needed).
+        // Tint: the wedge above the flat top. Line: the whole tilted top in full colour.
+        const left = rise > 0;
+        const yHigh = base - (left ? hLeft : hRight);
+        const lowHeight = left ? hRight : hLeft;
+        const xCut = cx + (left ? 1 : -1) * (h / Math.abs(slope));    // where a short bar's top meets the baseline
+        const lowEnd = lowHeight >= 0 ? [left ? x1 : x0, base - lowHeight] : [xCut, base];
+        const xHigh = left ? x0 : x1;
+        const solid = left
+          ? [x0, base, x0, yFlat, cx, yFlat, ...lowEnd, ...(lowHeight >= 0 ? [x1, base] : [])]
+          : [...(lowHeight >= 0 ? [x0, base] : []), ...lowEnd, cx, yFlat, x1, yFlat, x1, base];
+        bars.push('<polygon class="lean-bar" points="' + pts(solid) + '"/>');
+        bars.push('<polygon class="lean-tint" points="' + pts([xHigh, yFlat, xHigh, yHigh, cx, yFlat]) + '"/>');
+        bars.push('<path class="lean-top" d="M' + pts([xHigh, yHigh]) + 'L' + pts(lowEnd) + '"/>');
+        const xLow = left ? x1 : x0;                                   // dotted: the regular bar's top and its low-side edge
+        outlines.push('<path class="flat-bar" d="M' + pts([x0, yFlat]) + 'H' + round(x1) +
+          'M' + pts([xLow, base - Math.max(0, lowHeight)]) + 'V' + round(yFlat) + '"/>');
       }
       const top = b.count ? Math.max(hLeft, hRight) : 0;
       bars.push('<text class="value-label" x="' + cx + '" y="' + round(base - top - 8) + '" text-anchor="middle">' + b.count + '</text>');

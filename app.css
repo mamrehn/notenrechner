@@ -107,6 +107,21 @@
   fill: var(--series, var(--chart-1));
 }
 
+/* The wedge the tilt lifts above the regular bar: same hue, light, so it
+   reads as part of the bar, not as a second series; its top edge is drawn
+   in full colour (≥ 3:1 like every chart slot) */
+#c-chart .lean-tint {
+  fill: var(--series, var(--chart-1));
+  fill-opacity: 0.3;
+}
+
+#c-chart .lean-top {
+  fill: none;
+  stroke: var(--series, var(--chart-1));
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
 /* The regular flat bar as a dotted outline: round ink dots */
 #c-chart .flat-bar {
   fill: none;

@@ -22,7 +22,8 @@ Der IHK-Notenschlüssel, umgerechnet auf jede Höchstpunktzahl:
 - Für Lehrkräfte: Klasse auswerten (nur Punkte, keine Namen, beliebig getrennt, z. B.
   „2 3  32 26 3.5 5,8“): Durchschnitt und Median, Standardabweichung, Spannweite;
   Notenspiegel mit gekippter Oberkante: Sie zeigt, ob die Ergebnisse einer Note eher an der
-  besseren (links höher) oder an der schlechteren Nachbarnote liegen (rechts höher);
+  besseren (links höher) oder an der schlechteren Nachbarnote liegen (rechts höher),
+  um bis zu 45°; gepunktet der normale Balken, hell der Keil, den das Kippen anhebt;
   Noten im selben Layout zurück nach Excel
 - Zusatzpunkte, Farbschema automatisch / hell / dunkel (ein Knopf), funktioniert offline
 
