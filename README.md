@@ -9,8 +9,11 @@ Der IHK-Notenschlüssel, umgerechnet auf jede Höchstpunktzahl:
   Nachkommastellen (z. B. 13,353 aus mebis), Komma oder Punkt
 - Ergebnis **als Text kopieren** (für E-Mail oder Messenger) oder als Link teilen
 - Ausdruck mit Titel der Prüfung und optional dem Namen
-- Für Lehrkräfte: Klasse auswerten (nur Punkte, keine Namen), Notenspiegel,
-  Noten in derselben Reihenfolge zurück nach Excel kopieren
+- Für Lehrkräfte: **Punkte zusammenzählen** mit Höchstpunkten je Aufgabe. Die Tabelle
+  meldet fehlende Aufgaben, unmögliche Werte (über dem Maximum, nicht im Raster aus
+  halben, ganzen oder 0,01 Punkten) und zeigt Summe und Note pro Person
+- Für Lehrkräfte: Klasse auswerten (nur Punkte, keine Namen, beliebig getrennt, z. B.
+  „2 3  32 26 3.5 5,8“), Notenspiegel, Noten im selben Layout zurück nach Excel kopieren
 - Zusatzpunkte, Farbschema automatisch / hell / dunkel (ein Knopf), funktioniert offline
 
 ## Grundlage
@@ -70,6 +73,7 @@ Lob- oder Defizit-Formulierungen (etwa „Dir fehlen noch …“).
 | `step` | `1` für ganze Punkte, `0.01` für Hundertstel (Standard: halbe Punkte) |
 | `bonus` | Zusatzpunkte |
 | `title` | Titel der Prüfung |
+| `tasks` | Höchstpunkte je Aufgabe, z. B. `10_8_12_10` |
 
 Beispiel: `?title=2.+Schulaufgabe&max=15&p=13.353`. Der Name steht nie in der
 Adresse und wird nirgends gespeichert. Ältere Links mit `smax` (Höchstpunktzahl

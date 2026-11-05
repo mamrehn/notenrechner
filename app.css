@@ -52,6 +52,30 @@
   grid-template-columns: 3.5ch auto 8.5ch;
 }
 
+/* Points calculator: compact number cells, one row per person */
+#calc-table .form-input {
+  width: 4.5rem;
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-2);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The note column takes the slack, so the task cells stay together */
+#calc-table thead th:nth-last-child(2) {
+  width: 100%;
+}
+
+#calc-table td[data-note] {
+  min-width: 12rem;
+  font-size: var(--font-size-sm);
+}
+
+#calc-hint {
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
 /* List of skipped entries inside the warning alert */
 #class-skipped-list {
   margin-top: var(--space-1);

@@ -61,8 +61,6 @@
   const DEFAULT_STEP = 0.5;
   const MAX_LIMIT = 1000;
 
-  /* Class list separators; line breaks always separate as well */
-  const SEPARATORS = Object.freeze(['line', 'semicolon', 'comma', 'space']);
 
   // Grid values are rounded to the step's decimals: 12 - 0.01 → 11.99, not 11.990000000000002
   const stepDecimals = (step) => (String(step).split('.')[1] || '').length;
@@ -157,65 +155,81 @@
     };
   }
 
-  /* ---------- class list (points only, no names) ------------------ */
-  function splitLine(line, separator) {
-    if (separator === 'semicolon') return line.split(';');
-    if (separator === 'comma') return line.split(',');
-    if (separator === 'space') return line.includes('\t') ? line.split('\t') : line.trim().split(/ +/);
-    return [line];
+  /* ---------- lenient number lists (class list, task maxima) ------- */
+  /* Values may be separated by spaces, tabs, line breaks or semicolons,
+     in any mix: "2 3  32 26 3.5 5,8". A comma is a decimal comma ("5,8"),
+     unless the token also has a dot ("1.5,2,3": commas separate) or two
+     or more commas ("1,2,3": ambiguous, reported). Names are rejected. */
+  const TOKEN = /[^\s;]+/g;
+  const LETTERS = /[A-Za-zÄÖÜäöüß]/;
+  const NAME_REASON = 'Keine Zahl. Gib nur Punkte ein, ohne Namen.';
+
+  // A line with letters is one rejected entry: its numbers are not counted
+  // (it may be a name), and the rows below keep their position.
+  const lineValues = (line) => (LETTERS.test(line)
+    ? [{ raw: line.trim(), points: NaN, reason: NAME_REASON }]
+    : (line.match(TOKEN) || []).flatMap(parseToken));
+
+  function parseToken(raw) {
+    const tok = raw.replace(/^,+|,+$/g, '');                   // "12," → "12"
+    if (tok === '') return [];
+    if (LETTERS.test(tok)) return [{ raw, points: NaN, reason: NAME_REASON }];
+    const commas = (tok.match(/,/g) || []).length;
+    if (commas >= 2 && !tok.includes('.')) {
+      return [{ raw, points: NaN, reason: 'Nicht eindeutig. Trenne die Werte mit Leerzeichen oder Semikolon.' }];
+    }
+    const parts = tok.includes('.') && commas ? tok.split(',') : [tok];
+    return parts.map((part) => {
+      const points = parseNumber(part);
+      return { raw: part, points, reason: Number.isNaN(points) ? 'Keine gültige Zahl.' : null };
+    });
   }
 
-  function reasonFor(raw, separator) {
-    if (/[A-Za-zÄÖÜäöüß]/.test(raw)) return 'Keine Zahl. Gib nur Punkte ein, ohne Namen.';
-    if (separator === 'line' && /\d\s*[;\s]\s*\d/.test(raw)) return 'Mehrere Werte in einer Zeile. Wähle das passende Trennzeichen.';
-    return 'Keine gültige Zahl.';
-  }
-
-  /* Text → entries in input order. Empty lines (line mode) and empty
-     cells stay as empty entries, so copied grades line up with the
-     source rows; trailing empty lines are dropped. */
-  function parseList(text, separator = 'line') {
+  /* Text → values in reading order. If the text is a column (at most one
+     value per line), empty lines count as entries, so numbering follows
+     the rows of the source (Excel column with gaps). */
+  function parseList(text) {
     const lines = String(text ?? '').split(/\r?\n/);
     while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+    const perLine = lines.map(lineValues);
+    const column = perLine.every((values) => values.length <= 1);
     const entries = [];
-    lines.forEach((line, lineIndex) => {
-      if (separator !== 'line' && line.trim() === '') return;
-      const tokens = splitLine(line, separator);
-      while (tokens.length > 1 && tokens[tokens.length - 1].trim() === '') tokens.pop();
-      tokens.forEach((token) => {
-        const raw = token.trim();
-        entries.push({ position: entries.length + 1, line: lineIndex, raw, empty: raw === '', points: raw === '' ? null : parseNumber(raw) });
-      });
+    perLine.forEach((values, line) => {
+      if (!values.length) {
+        if (column) entries.push({ position: entries.length + 1, line, raw: '', empty: true, points: null, reason: null });
+        return;
+      }
+      values.forEach((v) => entries.push(Object.assign({ position: entries.length + 1, line, empty: false }, v)));
     });
     return entries;
   }
 
+  /* Replace every value in the text by fn(value), keeping all separators,
+     so the output pastes back into the same cells. */
+  function mapList(text, fn) {
+    const lines = String(text ?? '').replace(/\s+$/, '').split(/\r?\n/);
+    return lines.map((line) => (LETTERS.test(line) ? '' : line.replace(TOKEN, (raw) => parseToken(raw).map(fn).join(',')))).join('\n');
+  }
+
   /* Text + settings → evaluated rows, skipped entries, statistics and
      the grades as text in the same layout as the input. */
-  function evaluateList(text, settings, separator = 'line') {
-    const entries = parseList(text, separator);
+  function evaluateList(text, settings) {
+    const entries = parseList(text);
     const scale = buildScale(settings);
     const rows = [];
     const skipped = [];
-    const gradeLines = [];
     let empty = 0;
+    const gradeOf = (v) => {
+      if (v.reason) return null;
+      return checkPoints(v.points, settings) ? null : evaluate(v.points, settings, scale);
+    };
     entries.forEach((entry) => {
-      let grade = '';
-      if (entry.empty) empty++;
-      else if (Number.isNaN(entry.points)) skipped.push({ position: entry.position, raw: entry.raw, reason: reasonFor(entry.raw, separator) });
-      else {
-        const problem = checkPoints(entry.points, settings);
-        if (problem) skipped.push({ position: entry.position, raw: entry.raw, reason: problem });
-        else {
-          const r = evaluate(entry.points, settings, scale);
-          rows.push(Object.assign({ position: entry.position }, r));
-          grade = String(r.grade);
-        }
-      }
-      (gradeLines[entry.line] = gradeLines[entry.line] || []).push(grade);
+      if (entry.empty) { empty++; return; }
+      const problem = entry.reason || checkPoints(entry.points, settings);
+      if (problem) skipped.push({ position: entry.position, raw: entry.raw, reason: problem });
+      else rows.push(Object.assign({ position: entry.position }, evaluate(entry.points, settings, scale)));
     });
-    const joiner = { line: '\n', semicolon: ';', comma: ',', space: '\t' }[separator] || '\n';
-    const gradesText = gradeLines.filter(Boolean).map((cells) => cells.join(joiner)).join('\n');
+    const gradesText = mapList(text, (v) => { const r = gradeOf(v); return r ? String(r.grade) : ''; });
     const n = rows.length;
     const sum = (f) => rows.reduce((acc, r) => acc + f(r), 0);
     return {
@@ -234,11 +248,71 @@
     };
   }
 
+  /* ---------- points calculator (tasks) ---------------------------- */
+  /* Does the value fit the grid? 7,5 with half points yes, 7,3 no. */
+  const isOnGrid = (value, step) => Math.abs(value / step - Math.round(value / step)) < 1e-6;
+  const gridWord = (step) => ({ 0.5: 'nur ganze oder halbe Punkte', 1: 'nur ganze Punkte', 0.01: 'höchstens zwei Nachkommastellen' })[step];
+
+  /* "10 8 12 10" → maxima per task. Each must be > 0 and on the grid. */
+  function parseTaskMaxima(text, step) {
+    const values = (String(text ?? '').match(TOKEN) || []).flatMap(parseToken);
+    const maxima = [];
+    const problems = [];
+    values.forEach((v, i) => {
+      const label = 'Aufgabe ' + (i + 1);
+      if (v.reason) problems.push(label + ' („' + v.raw + '“): ' + v.reason);
+      else if (v.points <= 0) problems.push(label + ': Die Höchstpunktzahl muss größer als 0 sein.');
+      else if (!isOnGrid(v.points, step)) problems.push(label + ' (' + formatPlain(v.points) + '): ' + gridWord(step) + '.');
+      maxima.push(v.reason ? NaN : v.points);
+    });
+    return { maxima, total: maxima.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0), problems };
+  }
+
+  /* One cell of the calculator: '' is missing (0 must be typed), the
+     value must be a number on the grid and at most the task's maximum. */
+  function checkTaskCell(text, taskMax, step) {
+    const raw = String(text ?? '').trim();
+    if (raw === '') return { points: null, problem: 'missing' };
+    const points = parseNumber(raw);
+    if (Number.isNaN(points)) return { points: null, problem: 'Keine gültige Zahl' };
+    if (!isOnGrid(points, step)) return { points: null, problem: gridWord(step) };
+    if (points > taskMax + EPS) return { points: null, problem: 'höchstens ' + formatPlain(taskMax) };
+    return { points, problem: null };
+  }
+
+  /* One person's row: sum, missing tasks, invalid cells, grade if complete. */
+  function evaluateSheetRow(cells, maxima, settings, scale = buildScale(settings)) {
+    const checks = maxima.map((taskMax, i) => checkTaskCell(cells[i], taskMax, settings.step));
+    const missing = [];
+    const invalid = [];
+    let sum = 0;
+    checks.forEach((c, i) => {
+      if (c.problem === 'missing') missing.push(i + 1);
+      else if (c.problem) invalid.push({ task: i + 1, message: c.problem });
+      else sum += c.points;
+    });
+    sum = Number(sum.toFixed(stepDecimals(settings.step)));
+    const touched = checks.some((c) => c.problem !== 'missing');
+    const complete = missing.length === 0 && invalid.length === 0;
+    const overTop = complete && checkPoints(sum, settings);
+    return {
+      checks,
+      sum,
+      touched,
+      missing,
+      invalid,
+      complete: complete && !overTop,
+      problem: overTop || null,
+      result: complete && !overTop ? evaluate(sum, settings, scale) : null
+    };
+  }
+
   return {
-    KEY, DECIMAL, STEPS, DEFAULT_STEP, MAX_LIMIT, SEPARATORS,
+    KEY, DECIMAL, STEPS, DEFAULT_STEP, MAX_LIMIT,
     parseNumber, ceilToStep, floorTo, percentOf,
     bandForPercent, decimalForPercent, wholePercent,
     checkSettings, checkPoints, buildScale, evaluate,
-    parseList, evaluateList
+    parseList, mapList, evaluateList,
+    isOnGrid, parseTaskMaxima, checkTaskCell, evaluateSheetRow
   };
 });

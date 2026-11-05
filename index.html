@@ -162,8 +162,61 @@
             </table>
           </div>
         </div>
-        <p class="form-hint mb-4" id="key-note">Punkte mit Nachkommastellen, z.&nbsp;B. aus mebis, ordnet der Prozentwert ein.</p>
+        <p class="form-hint mb-4" id="key-note" hidden>Punkte mit Nachkommastellen, z.&nbsp;B. aus mebis, ordnet der Prozentwert ein.</p>
 
+
+        <details class="collapsible" id="calc-section" data-print="hide">
+          <summary>
+            <span class="cluster">
+              <span>Punkte zusammenzählen</span>
+              <span class="badge teacher"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M21 3H3c-1.11 0-2 .89-2 2v12c0 1.1.89 2 2 2h5v2h8v-2h2v-2H3V5h18v8h2V5c0-1.11-.9-2-2-2zm-8 7c0-1.65-1.35-3-3-3S7 8.35 7 10s1.35 3 3 3 3-1.35 3-3zm-3 1c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 3.43c0-1.65-3.33-2.43-6-2.43s-6 .78-6 2.43V16h12v-1.57zM6.48 14c.74-.48 2.22-1 3.52-1s2.77.49 3.52 1H6.48zM22 15h-2v2h2v-2zm-2-6h2v4h-2V9z"/></svg>Für Lehrkräfte</span>
+            </span>
+            <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/></svg>
+          </summary>
+          <div class="collapsible-inner">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label" for="tasks">Höchstpunkte je Aufgabe</label>
+                <input class="form-input" id="tasks" name="tasks" type="text" inputmode="decimal" autocomplete="off" placeholder="z. B. 10 8 12 10" aria-describedby="tasks-hint tasks-error">
+                <span class="form-hint" id="tasks-hint">Eine Zahl pro Aufgabe, getrennt durch Leerzeichen. Erlaubt sind dieselben Punkteschritte wie bei „Notengrenzen in“.</span>
+                <span class="form-error" id="tasks-error" hidden></span>
+              </div>
+              <div class="form-group">
+                <p class="mb-0" id="tasks-summary" aria-live="polite"></p>
+                <div class="alert warning mt-3 mb-0" role="status" id="tasks-mismatch" hidden>
+                  <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                  <div>
+                    <span id="tasks-mismatch-text"></span>
+                    <div class="alert-actions"><button class="btn secondary small" type="button" id="tasks-apply">Höchstpunktzahl übernehmen</button></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-muted mb-0" id="calc-empty">Trag zuerst die Höchstpunkte je Aufgabe ein. Dann erscheint eine Zeile pro Person.</p>
+            <div class="card flush mb-0" id="calc-sheet" hidden>
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">Punkte je Person</h3>
+                  <p class="card-subtitle" id="calc-count"></p>
+                </div>
+                <div class="cluster">
+                  <button class="btn secondary small" type="button" id="calc-copy"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg> Summen und Noten kopieren</button>
+                  <button class="btn secondary small" type="button" id="calc-transfer">An „Klasse auswerten“ übergeben</button>
+                  <button class="btn ghost small" type="button" id="calc-clear">Alle Punkte löschen</button>
+                </div>
+              </div>
+              <div class="table-scroll">
+                <table class="data-table compact" id="calc-table">
+                  <caption class="visually-hidden">Punkte je Aufgabe und Person, mit Summe und Note</caption>
+                  <thead id="calc-head"></thead>
+                  <tbody id="calc-body"></tbody>
+                </table>
+              </div>
+              <p class="form-hint mb-0" id="calc-hint">Enter springt zur nächsten Aufgabe, ↑ und ↓ wechseln die Person. Ein leeres Feld fehlt noch: Trag 0 ein, wenn es keine Punkte gab. Nichts wird gespeichert.</p>
+            </div>
+          </div>
+        </details>
 
         <details class="collapsible" id="class-section" data-print="hide">
           <summary>
@@ -176,20 +229,10 @@
           <div class="collapsible-inner">
             <div class="grid cols-2">
               <div data-print="hide">
-                <div class="form-group">
+                <div class="form-group mb-0">
                   <label class="form-label" for="list">Punkte</label>
                   <textarea class="form-textarea" id="list" rows="8" spellcheck="false" autocomplete="off" aria-describedby="list-hint" placeholder="11,5&#10;9&#10;13,353"></textarea>
-                  <span class="form-hint" id="list-hint">Nur Punkte, keine Namen. Du kannst eine Spalte oder Zeile aus Excel einfügen. Die Liste bleibt in deinem Browser und wird nirgends gespeichert.</span>
-                </div>
-                <div class="form-group mb-0">
-                  <label class="form-label" for="separator">Trennzeichen</label>
-                  <select class="form-select" id="separator" aria-describedby="separator-hint">
-                    <option value="line" selected>Zeilenumbruch, eine Zahl pro Zeile</option>
-                    <option value="semicolon">Semikolon</option>
-                    <option value="space">Tabulator oder Leerzeichen</option>
-                    <option value="comma">Komma</option>
-                  </select>
-                  <span class="form-hint" id="separator-hint">Zeilenumbrüche trennen immer. Bei Komma schreibst du Dezimalzahlen mit Punkt, z.&nbsp;B. 11.5.</span>
+                  <span class="form-hint" id="list-hint">Nur Punkte, keine Namen. Trenne sie mit Leerzeichen, Zeilenumbrüchen oder Semikolons, z.&nbsp;B. „12 9,5 14“, oder füge eine Spalte aus Excel ein. Die Liste wird nirgends gespeichert.</span>
                 </div>
               </div>
 
@@ -290,6 +333,7 @@
                   <dt><code>step</code></dt><dd><code>1</code> für ganze Punkte, <code>0.01</code> für Hundertstel, ohne Angabe halbe Punkte</dd>
                   <dt><code>bonus</code></dt><dd>Zusatzpunkte</dd>
                   <dt><code>title</code></dt><dd>Titel der Prüfung</dd>
+                  <dt><code>tasks</code></dt><dd>Höchstpunkte je Aufgabe, z.&nbsp;B. <code>10_8_12_10</code></dd>
                 </dl>
                 <p>Beispiele:</p>
                 <ul id="examples"></ul>

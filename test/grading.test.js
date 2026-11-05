@@ -124,27 +124,64 @@ test('input validation', () => {
   assert.equal(G.checkPoints(14, S(13, 1, 1)), null);
 });
 
-test('class lists: points only, separators, alignment', () => {
-  const line = G.evaluateList('11,5\n\n13,353\nAnna 9\n20\n7\n\n', S(15), 'line');
-  assert.deepEqual(line.rows.map((r) => [r.position, r.points, r.grade]), [[1, 11.5, 3], [3, 13.353, 2], [6, 7, 5]]);
-  assert.deepEqual(line.skipped.map((s) => s.position), [4, 5]);
-  assert.match(line.skipped[0].reason, /ohne Namen/);
-  assert.equal(line.empty, 1);
-  assert.equal(line.gradesText, '3\n\n2\n\n\n5', 'same rows as the input, trailing empty lines dropped');
+test('class lists: lenient separators, points only, alignment', () => {
+  const mixed = G.evaluateList('2 3  32 26 3.5 5,8', S(40));
+  assert.deepEqual(mixed.rows.map((r) => r.points), [2, 3, 32, 26, 3.5, 5.8]);
+  assert.equal(mixed.gradesText, '6 6  3 4 6 6', 'grades replace the values, separators stay');
 
-  const semi = G.evaluateList('11,5;12;;9\n8', S(13), 'semicolon');
+  const column = G.evaluateList('11,5\n\n13,353\nAnna 9\n20\n7\n\n', S(15));
+  assert.deepEqual(column.rows.map((r) => [r.position, r.points, r.grade]), [[1, 11.5, 3], [3, 13.353, 2], [6, 7, 5]]);
+  assert.deepEqual(column.skipped.map((s) => s.position), [4, 5], 'a column keeps its row numbers, gaps included');
+  assert.match(column.skipped[0].reason, /ohne Namen/);
+  assert.equal(column.empty, 1);
+  assert.equal(column.gradesText, '3\n\n2\n\n\n5');
+
+  const semi = G.evaluateList('11,5;12;;9\n8', S(13));
   assert.deepEqual(semi.rows.map((r) => r.points), [11.5, 12, 9, 8]);
   assert.equal(semi.gradesText, '2;1;;3\n4');
 
-  const comma = G.evaluateList('11.5, 12, 9', S(13), 'comma');
-  assert.deepEqual(comma.rows.map((r) => r.points), [11.5, 12, 9]);
+  const tabs = G.evaluateList('11,5\t\t9\n7 8', S(13));
+  assert.deepEqual(tabs.rows.map((r) => r.points), [11.5, 9, 7, 8]);
+  assert.equal(tabs.gradesText, '2\t\t3\n4 4');
 
-  const tabs = G.evaluateList('11,5\t\t9\n7 8', S(13), 'space');
-  assert.deepEqual(tabs.rows.map((r) => [r.position, r.points]), [[1, 11.5], [3, 9], [4, 7], [5, 8]]);
-  assert.equal(tabs.gradesText, '2\t\t3\n4\t4');
+  const commas = G.evaluateList('11,5, 12, 9\n1.5,2,3\n1,2,3', S(13));
+  assert.deepEqual(commas.rows.map((r) => r.points), [11.5, 12, 9, 1.5, 2, 3]);
+  assert.match(commas.skipped[0].reason, /Nicht eindeutig/);
+});
 
-  const multi = G.evaluateList('11 12', S(13), 'line');
-  assert.match(multi.skipped[0].reason, /Trennzeichen/);
+test('calculator: task maxima', () => {
+  const t = G.parseTaskMaxima('10 8 12 10', 0.5);
+  assert.deepEqual(t.maxima, [10, 8, 12, 10]);
+  assert.equal(t.total, 40);
+  assert.deepEqual(t.problems, []);
+  assert.match(G.parseTaskMaxima('10 7,5', 1).problems[0], /Aufgabe 2.*nur ganze Punkte/);
+  assert.match(G.parseTaskMaxima('10 0', 0.5).problems[0], /größer als 0/);
+  assert.match(G.parseTaskMaxima('10 x', 0.5).problems[0], /Aufgabe 2/);
+});
+
+test('calculator: one row, missing and impossible inputs', () => {
+  const settings = S(40, 0.5);
+  const maxima = [10, 8, 12, 10];
+  const full = G.evaluateSheetRow(['9,5', '8', '7', '10'], maxima, settings);
+  assert.equal(full.complete, true);
+  assert.equal(full.sum, 34.5);
+  assert.equal(full.result.grade, 2);
+
+  const gap = G.evaluateSheetRow(['9,5', '', '7', '0'], maxima, settings);
+  assert.equal(gap.complete, false);
+  assert.deepEqual(gap.missing, [2], 'empty is missing, 0 is zero points');
+  assert.equal(gap.sum, 16.5, 'partial sum');
+  assert.equal(gap.result, null);
+
+  const bad = G.evaluateSheetRow(['7,3', '9', 'x', '10'], maxima, settings);
+  assert.deepEqual(bad.invalid.map((i) => [i.task, i.message]), [[1, 'nur ganze oder halbe Punkte'], [2, 'höchstens 8'], [3, 'Keine gültige Zahl']]);
+  assert.equal(G.evaluateSheetRow(['7,5', '8', '12', '10'], maxima, S(40, 1)).invalid[0].message, 'nur ganze Punkte');
+  assert.equal(G.evaluateSheetRow(['7,25', '8', '12', '10'], maxima, S(40, 0.01)).complete, true);
+  assert.equal(G.evaluateSheetRow(['', '', '', ''], maxima, settings).touched, false);
+  // tasks add up to more than the maximum: the sum is flagged, not graded
+  const over = G.evaluateSheetRow(['10', '8', '12', '10', '5'], [10, 8, 12, 10, 5], settings);
+  assert.equal(over.complete, false);
+  assert.match(over.problem, /Mehr als 40/);
 });
 
 test('class statistics', () => {
