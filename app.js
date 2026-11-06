@@ -481,7 +481,7 @@
     return (strength >= 0.6 ? 'deutlich' : 'eher') + ' Richtung ' + towards;
   }
 
-  function leanChart(stats) {
+  function leanChart(stats, idPrefix = 'c') {
     const width = 600;
     const base = 200;
     const room = 170;                // baseline to the highest corner, leaving space for the counts
@@ -524,8 +524,8 @@
         bars.push('<polygon class="lean-bar" points="' + pts(solid) + '"/>');
         bars.push('<polygon class="lean-tint" points="' + pts([xHigh, yFlat, xHigh, yHigh, cx, yFlat]) + '"/>');
         // Clipped to the bar's own box, so the line ends flush with its edges and the baseline
-        clips.push('<clipPath id="c-lean-clip-' + i + '"><rect x="' + round(x0) + '" y="0" width="' + barWidth + '" height="' + base + '"/></clipPath>');
-        bars.push('<path class="lean-top" clip-path="url(#c-lean-clip-' + i + ')" d="M' + pts([xHigh, yHigh]) + 'L' + pts(lowEnd) + '"/>');
+        clips.push('<clipPath id="' + idPrefix + '-lean-clip-' + i + '"><rect x="' + round(x0) + '" y="0" width="' + barWidth + '" height="' + base + '"/></clipPath>');
+        bars.push('<path class="lean-top" clip-path="url(#' + idPrefix + '-lean-clip-' + i + ')" d="M' + pts([xHigh, yHigh]) + 'L' + pts(lowEnd) + '"/>');
         const xLow = left ? x1 : x0;                                   // dotted: the regular bar's top and its low-side edge
         outlines.push('<path class="flat-bar" d="M' + pts([x0, yFlat]) + 'H' + round(x1) +
           'M' + pts([xLow, base - Math.max(0, lowHeight)]) + 'V' + round(yFlat) + '"/>');
@@ -537,6 +537,55 @@
     return '<defs>' + clips.join('') + '</defs>' + '<g class="series-1">' + bars.join('') + '</g>' + outlines.join('') +
       '<line class="baseline" x1="0" x2="' + width + '" y1="' + base + '" y2="' + base + '"/>' +
       '<g class="axis">' + labels.join('') + '</g>';
+  }
+
+  /* --- Presentation for the class (projector) -----------------------
+     Display mode (styleguide § 5.5) plus a view covering the page, in
+     browser fullscreen where possible. Shows title, key figures and the
+     Notenspiegel. The range is left out on purpose: its lowest score can
+     point at one person. */
+  let classStats = null;
+  let presentFrom = null;
+
+  function presentMetric(label, value, context) {
+    return '<div class="metric"><span class="metric-label">' + label + '</span><span class="metric-value">' + value + '</span>' +
+      (context ? '<span class="metric-trend"><span class="metric-context">' + context + '</span></span>' : '') + '</div>';
+  }
+
+  function renderPresent() {
+    const st = classStats;
+    if (!st || !settings) return;
+    $('present-title').textContent = $('title').value.trim() || 'Notenspiegel';
+    $('present-sub').textContent = 'Höchstpunktzahl ' + num(settings.max);
+    $('present-metrics').innerHTML =
+      presentMetric('Ausgewertet', st.count, '') +
+      presentMetric('Ø Note', fixed(st.averageGrade, 2), 'Median ' + num(st.medianGrade)) +
+      presentMetric('Note 4 oder besser', st.passed, 'von ' + st.count) +
+      presentMetric('Ø Prozent', pct(st.averagePercent) + '<span class="metric-unit">%</span>', 'Median ' + pctUnit(st.medianPercent)) +
+      (st.sdPoints === null ? '' : presentMetric('Standardabweichung', averageFormat.format(st.sdPoints) + '<span class="metric-unit">Punkte</span>', averageFormat.format(st.sdPercent) + ' Prozentpunkte'));
+    $('present-chart').setAttribute('aria-label', $('c-chart').getAttribute('aria-label'));
+    $('present-chart').innerHTML = leanChart(st, 'p');
+  }
+
+  function openPresent() {
+    if (!classStats) return;
+    presentFrom = document.activeElement;
+    renderPresent();
+    document.documentElement.classList.add('display-mode');
+    $('present').hidden = false;
+    $('present-close').focus();
+    const el = $('present');
+    if (el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen().catch(() => { /* stays a full-window view */ });
+  }
+
+  function closePresent() {
+    if ($('present').hidden) return;
+    $('present').hidden = true;
+    document.documentElement.classList.remove('display-mode');
+    // Leaving fullscreen resets focus afterwards; give it back once that is done
+    const restore = () => requestAnimationFrame(() => { if (presentFrom && presentFrom.focus) presentFrom.focus(); });
+    if (document.fullscreenElement) document.exitFullscreen().then(restore, restore);
+    else restore();
   }
 
   function renderClass() {
@@ -552,6 +601,7 @@
     $('class-skipped-list').innerHTML = skipped.map((s) =>
       '<li>Nr. ' + s.position + ' („' + escapeHtml(s.raw) + '“): ' + escapeHtml(s.reason) + '</li>').join('');
 
+    classStats = stats;
     if (!stats) return;
     $('c-count').textContent = stats.count;
     $('c-grade').textContent = fixed(stats.averageGrade, 2);
@@ -699,6 +749,15 @@
     $('step').addEventListener('b3:change', () => update());
     $('name').addEventListener('input', renderPrint);
     $('list').addEventListener('input', () => { if (settings) renderClass(); });
+    $('present-open').addEventListener('click', openPresent);
+    $('present-close').addEventListener('click', closePresent);
+    // Esc closes (in fullscreen the browser uses Esc to leave fullscreen first)
+    document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) closePresent(); });
+    document.addEventListener('keydown', (e) => {
+      if ($('present').hidden) return;
+      if (e.key === 'Escape') { e.preventDefault(); closePresent(); }
+      if (e.key === 'Tab') { e.preventDefault(); $('present-close').focus(); }   // keep focus in the view
+    });
     $('calc-body').addEventListener('input', onSheetInput);
     $('calc-body').addEventListener('keydown', onSheetKey);
     $('calc-body').addEventListener('focusin', onSheetFocus);

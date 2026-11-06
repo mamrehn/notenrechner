@@ -103,19 +103,19 @@
 }
 
 /* Notenspiegel with tilted tops (SVG, styleguide chart tokens) */
-#c-chart .lean-bar {
+[data-lean-chart] .lean-bar {
   fill: var(--series, var(--chart-1));
 }
 
 /* The wedge the tilt lifts above the regular bar: same hue, light, so it
    reads as part of the bar, not as a second series; its top edge is drawn
    in full colour (≥ 3:1 like every chart slot) */
-#c-chart .lean-tint {
+[data-lean-chart] .lean-tint {
   fill: var(--series, var(--chart-1));
   fill-opacity: 0.3;
 }
 
-#c-chart .lean-top {
+[data-lean-chart] .lean-top {
   fill: none;
   stroke: var(--series, var(--chart-1));
   stroke-width: 2;
@@ -123,7 +123,7 @@
 }
 
 /* The regular flat bar as a dotted outline: round ink dots */
-#c-chart .flat-bar {
+[data-lean-chart] .flat-bar {
   fill: none;
   stroke: var(--chart-axis);
   stroke-width: 2;
@@ -131,10 +131,40 @@
   stroke-dasharray: 0 5;
 }
 
-#c-chart .baseline {
+[data-lean-chart] .baseline {
   stroke: var(--chart-axis);
   stroke-width: 1;
   shape-rendering: crispEdges;
+}
+
+/* Presentation view for the class (projector): the page in display mode,
+   this view covering it. Labels at base size, as display mode asks. */
+#present:not([hidden]) {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-8);
+  overflow: auto;
+  background: var(--color-bg);
+}
+
+#present .metric-group {
+  margin-bottom: 0;
+}
+
+#present .metric-label,
+#present .metric-context,
+#present .form-hint {
+  font-size: var(--font-size-base);
+}
+
+#present-chart {
+  flex: 1;
+  min-height: 12rem;
+  max-height: 62vh;
 }
 
 /* List of skipped entries inside the warning alert */
@@ -165,7 +195,7 @@
   }
 
   /* The SVG scales down with the column; keep its labels readable */
-  #c-chart text {
+  [data-lean-chart] text {
     font-size: 22px;
   }
 }

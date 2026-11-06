@@ -24,7 +24,9 @@ Der IHK-Notenschlüssel, umgerechnet auf jede Höchstpunktzahl:
   Notenspiegel mit gekippter Oberkante: Sie zeigt, ob die Ergebnisse einer Note eher an der
   besseren (links höher) oder an der schlechteren Nachbarnote liegen (rechts höher),
   um bis zu 45°; gepunktet der normale Balken, hell der Keil, den das Kippen anhebt;
-  Noten im selben Layout zurück nach Excel
+  Noten im selben Layout zurück nach Excel; **Präsentieren** zeigt Notenspiegel und
+  Kennzahlen im Vollbild für den Beamer (ohne Spannweite, damit niemand am niedrigsten
+  Ergebnis erkennbar wird; <kbd>Esc</kbd> schließt)
 - Zusatzpunkte, Farbschema automatisch / hell / dunkel (ein Knopf), funktioniert offline
 
 ## Grundlage
